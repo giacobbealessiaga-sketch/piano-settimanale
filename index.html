@@ -48,6 +48,7 @@
     .right-col { padding-left: 0; }
     .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; flex: 1 1 0; min-height: 50px; transition: flex 0.2s ease; }
     .day-card.active { flex: 3 1 0; }
+    .day-card.active { flex: 3 1 0; }
     .weekend-wrap { display: flex; flex-direction: column; flex: 1; gap: 5px; min-height: 0; }
     .weekend-wrap .day-card { flex: 1; }
     .day-hdr { display: flex; align-items: center; gap: 5px; padding: 4px 7px; border-bottom: 0.5px solid var(--border); background: var(--bg-secondary); flex-shrink: 0; cursor: pointer; }
@@ -114,6 +115,28 @@
     .cd.today-c { background: var(--red) !important; color: #fff !important; }
     .cd.empty { cursor: default; pointer-events: none; }
     .cal-close-btn { margin-top: 12px; width: 100%; padding: 8px; border: 0.5px solid var(--border-med); border-radius: var(--radius-md); background: none; cursor: pointer; font-size: 13px; color: var(--text-secondary); font-family: inherit; }
+
+    /* DAY VIEW */
+    .day-view{display:none;position:fixed;inset:0;background:var(--bg-primary);z-index:50;flex-direction:column;max-width:430px;margin:0 auto;}
+    .day-view.open{display:flex;}
+    .dv-header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#e8f0e2;border-bottom:0.5px solid var(--border);flex-shrink:0;}
+    .dv-back{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-secondary);padding:0 2px;line-height:1;font-family:inherit;}
+    .dv-back:hover{color:var(--text-primary);}
+    .dv-title{flex:1;}
+    .dv-dow{font-size:11px;color:var(--text-secondary);font-weight:500;text-transform:uppercase;}
+    .dv-date{font-size:18px;font-weight:500;color:var(--text-primary);line-height:1.2;}
+    .dv-nav{display:flex;gap:4px;}
+    .dv-nav button{width:32px;height:32px;background:var(--bg-secondary);border:0.5px solid var(--border-med);border-radius:var(--radius-md);cursor:pointer;font-size:18px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-family:inherit;}
+    .dv-nav button:hover{background:var(--bg-primary);}
+    .dv-body{flex:1;overflow-y:auto;position:relative;min-height:0;}
+    .dv-lines{position:absolute;left:0;right:0;top:0;height:max(100%,800px);background:repeating-linear-gradient(to bottom,transparent,transparent 26px,var(--border) 26px,var(--border) 27px);pointer-events:none;}
+    .dv-editor{position:relative;z-index:1;min-height:100%;padding:6px 16px;font-size:15px;line-height:27px;color:var(--text-primary);font-family:inherit;word-break:break-word;outline:none;cursor:text;caret-color:var(--red);}
+    .dv-editor ul{margin:0;padding-left:20px;list-style:disc;}
+    .dv-editor ul li{line-height:27px;padding:0;margin:0;}
+    .day-hdr{transition:filter 0.15s;}
+    .day-hdr:hover{filter:brightness(0.93);}
+    .day-hdr:active{filter:brightness(0.87);}
+    .day-hdr.today:hover{filter:brightness(1.1);}
   </style>
 </head>
 <body>
@@ -178,6 +201,63 @@
     <button class="nav-btn" id="nav-appunti"><i class="ti ti-notes"></i>Appunti</button>
     <button class="nav-btn" id="nav-oggi"><i class="ti ti-calendar-event"></i>Oggi</button>
     <button class="nav-btn" id="nav-menu"><i class="ti ti-settings"></i>Menu</button>
+  </div>
+</div>
+
+
+<!-- DAY VIEW -->
+<div class="day-view" id="day-view">
+  <div class="dv-header">
+    <button class="dv-back" id="dv-back" aria-label="Torna">&#8592;</button>
+    <div class="dv-title">
+      <div class="dv-dow" id="dv-dow"></div>
+      <div class="dv-date" id="dv-date"></div>
+    </div>
+    <div class="dv-nav">
+      <button id="dv-prev" aria-label="Giorno precedente">&#8249;</button>
+      <button id="dv-next" aria-label="Giorno successivo">&#8250;</button>
+    </div>
+  </div>
+  <div class="dv-body" id="dv-body">
+    <div class="dv-lines"></div>
+    <div class="dv-editor" id="dv-editor" contenteditable="true" spellcheck="true"></div>
+  </div>
+  <div class="toolbar" id="toolbar-dv">
+    <button class="tb-btn" id="dv-bold" title="Grassetto"><b>B</b></button>
+    <button class="tb-btn" id="dv-italic" title="Corsivo"><i>I</i></button>
+    <button class="tb-btn" id="dv-under" title="Sottolineato"><u>U</u></button>
+    <button class="tb-btn" id="dv-strike" title="Barrato"><s>S</s></button>
+    <div class="tb-sep"></div>
+    <select class="size-select" id="dv-size" title="Dimensione">
+      <option value="9">9</option><option value="9.5">9.5</option>
+      <option value="10">10</option><option value="10.5">10.5</option>
+      <option value="11">11</option><option value="11.5">11.5</option>
+      <option value="12">12</option><option value="12.5">12.5</option>
+      <option value="14" selected>14</option><option value="14.5">14.5</option>
+      <option value="15">15</option>
+    </select>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="dv-ul" title="Elenco puntato"><i class="ti ti-list" aria-hidden="true"></i></button>
+    <div class="tb-sep"></div>
+    <div class="color-picker-wrap">
+      <div class="color-dot" id="dv-cur-color" style="background:#1a1a1a;" role="button" aria-label="Colore"></div>
+      <div class="color-menu" id="dv-color-menu">
+        <div class="cm-dot active" data-color="#1a1a1a" style="background:#1a1a1a;"></div>
+        <div class="cm-dot" data-color="#c0392b" style="background:#c0392b;"></div>
+        <div class="cm-dot" data-color="#2471a3" style="background:#2471a3;"></div>
+        <div class="cm-dot" data-color="#1e8449" style="background:#1e8449;"></div>
+        <div class="cm-dot" data-color="#d4ac0d" style="background:#d4ac0d;"></div>
+        <div class="cm-dot" data-color="#884ea0" style="background:#884ea0;"></div>
+        <div class="cm-dot" data-color="#e67e22" style="background:#e67e22;"></div>
+        <div class="cm-dot" data-color="#aaa" style="background:#aaa;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn active"><i class="ti ti-notebook"></i>Agenda</button>
+    <button class="nav-btn" id="dv-nav-appunti"><i class="ti ti-notes"></i>Appunti</button>
+    <button class="nav-btn" id="dv-nav-oggi"><i class="ti ti-calendar-event"></i>Oggi</button>
+    <button class="nav-btn" id="dv-nav-menu"><i class="ti ti-settings"></i>Menu</button>
   </div>
 </div>
 
