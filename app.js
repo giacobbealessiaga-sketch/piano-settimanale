@@ -95,13 +95,6 @@ function wireDayViewEvents() {
   tbDvBind('dv-strike', () => fmt('strikeThrough'));
   tbDvBind('dv-ul', toggleBullet);
 
-    const dvSize = document.getElementById('dv-size');
-  dvSize.addEventListener('mousedown', e => e.stopPropagation());
-  dvSize.addEventListener('change', function() {
-    if (!activeEditor) return;
-    applyFontSize(parseFloat(this.value));
-  });
-
   document.getElementById('dv-cur-color').addEventListener('mousedown', e => {
     e.preventDefault(); e.stopPropagation();
     document.getElementById('dv-color-menu').classList.toggle('show');
@@ -298,41 +291,6 @@ tbBind('tb-italic', () => fmt('italic'));
 tbBind('tb-under', () => fmt('underline'));
 tbBind('tb-strike', () => fmt('strikeThrough'));
 tbBind('tb-ul', toggleBullet);
-
-function applyFontSize(sizePx) {
-  if (!activeEditor) return;
-  activeEditor.focus(); restoreRange();
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-  const range = sel.getRangeAt(0);
-  if (range.collapsed) {
-    // No selection: set a style that will apply to next typed chars
-    document.execCommand('fontSize', false, '7');
-    activeEditor.querySelectorAll('font[size="7"]').forEach(n => {
-      n.removeAttribute('size'); n.style.fontSize = sizePx + 'px';
-    });
-  } else {
-    // Has selection: wrap in span
-    const span = document.createElement('span');
-    span.style.fontSize = sizePx + 'px';
-    try {
-      range.surroundContents(span);
-    } catch(e) {
-      // surroundContents fails if selection crosses elements — fallback
-      document.execCommand('fontSize', false, '7');
-      activeEditor.querySelectorAll('font[size="7"]').forEach(n => {
-        n.removeAttribute('size'); n.style.fontSize = sizePx + 'px';
-      });
-    }
-  }
-  saveRange();
-  activeEditor.dispatchEvent(new Event('input'));
-}
-document.getElementById('tb-size').addEventListener('mousedown', e => e.stopPropagation());
-document.getElementById('tb-size').addEventListener('change', function() {
-  if (!activeEditor) return;
-  applyFontSize(parseFloat(this.value));
-});
 
 document.getElementById('cur-color').addEventListener('mousedown', function(e) {
   e.preventDefault(); e.stopPropagation();
