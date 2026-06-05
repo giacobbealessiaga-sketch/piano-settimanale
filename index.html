@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Piano Settimanale</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#e8f0e2" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Piano Sett." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #f7f3e8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f0;
+      --bg-tertiary: #f7f3e8;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666660;
+      --text-tertiary: #aaa;
+      --border: rgba(0,0,0,0.12);
+      --border-med: rgba(0,0,0,0.22);
+      --red: #c0392b;
+      --red-dark: #a93226;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1e1e1e;
+        --bg-secondary: #2a2a2a;
+        --bg-tertiary: #141414;
+        --text-primary: #f0f0f0;
+        --text-secondary: #aaa;
+        --text-tertiary: #666;
+        --border: rgba(255,255,255,0.1);
+        --border-med: rgba(255,255,255,0.2);
+      }
+      body { background: var(--bg-tertiary); }
+      .header { background: #1a2a1a !important; }
+      .week-nav { background: #1c251c !important; }
+      .ring { border-color: #888 !important; }
+    }
+
+    .app { max-width: 430px; margin: 0 auto; background: var(--bg-tertiary); min-height: 100dvh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #e8f0e2; border-bottom: 0.5px solid var(--border); }
+    .hdr-pill { background: var(--bg-primary); border-radius: var(--radius-md); border: 0.5px solid var(--border); padding: 4px 10px; font-size: 13px; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
+    .hdr-pill:hover { background: var(--bg-secondary); }
+    .hdr-pill strong { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .hdr-pill span { font-size: 11px; color: var(--text-secondary); }
+
+    /* WEEK NAV */
+    .week-nav { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: #f0f5ec; }
+    .week-nav button { background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 24px; padding: 0 6px; line-height: 1; }
+    .week-nav span { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+
+    /* NOTEBOOK */
+    .notebook { flex: 1; overflow: hidden; touch-action: pan-y; cursor: grab; }
+    .notebook.dragging { cursor: grabbing; }
+    .page { display: grid; grid-template-columns: 1fr 18px 1fr; }
+    .spiral-col { display: flex; flex-direction: column; align-items: center; padding: 4px 0; pointer-events: none; }
+    .ring { width: 13px; height: 9px; border: 2.5px solid #555; border-radius: 50% 50% 0 0 / 60% 60% 0 0; margin: 1.5px 0; }
+    .left-col, .right-col { display: flex; flex-direction: column; padding: 4px; }
+    .right-col { padding-left: 0; }
+
+    /* DAY CARD */
+    .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; margin-bottom: 5px; }
+    .day-hdr { display: flex; align-items: center; gap: 5px; padding: 4px 7px; border-bottom: 0.5px solid var(--border); background: var(--bg-secondary); flex-shrink: 0; cursor: pointer; }
+    .day-hdr .dow { font-size: 10px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; }
+    .day-hdr .num { font-size: 16px; font-weight: 500; color: var(--text-primary); line-height: 1; }
+    .day-hdr .mon-lbl { font-size: 10px; color: var(--text-tertiary); }
+    .day-hdr.today { background: var(--red); }
+    .day-hdr.today .dow, .day-hdr.today .num, .day-hdr.today .mon-lbl { color: #fff; }
+    .day-body { padding: 4px 6px; background: repeating-linear-gradient(to bottom, transparent, transparent 20px, var(--border) 20px, var(--border) 21px); min-height: 80px; cursor: pointer; }
+    .weekend-body { min-height: 38px; }
+
+    /* ENTRIES */
+    .entry-row { display: flex; align-items: flex-start; gap: 4px; padding: 2px 0; font-size: 11px; line-height: 1.5; color: var(--text-primary); border-radius: 4px; }
+    .entry-row:hover { background: var(--bg-secondary); }
+    .entry-row input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: var(--red); cursor: pointer; }
+    .entry-row .txt { flex: 1; cursor: pointer; word-break: break-word; }
+    .entry-row .txt.done { text-decoration: line-through; color: var(--text-tertiary); }
+    .entry-row.note-type .txt { color: var(--text-secondary); font-style: italic; }
+    .entry-row .act-btns { display: none; gap: 2px; flex-shrink: 0; }
+    .entry-row:hover .act-btns { display: flex; }
+    .act-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--text-tertiary); padding: 0 2px; line-height: 1; }
+    .act-btn.del:hover { color: var(--red); }
+    .more-lbl { font-size: 10px; color: var(--text-tertiary); padding: 1px 0; }
+
+    /* INLINE EDIT */
+    .edit-row { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+    .edit-inp { flex: 1; padding: 3px 6px; border-radius: var(--radius-md); border: 0.5px solid var(--red); background: var(--bg-primary); font-size: 11px; color: var(--text-primary); font-family: inherit; }
+    .edit-inp:focus { outline: none; }
+    .edit-ok { background: var(--red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 11px; padding: 3px 7px; }
+    .edit-cancel { background: none; border: 0.5px solid var(--border-med); border-radius: var(--radius-md); cursor: pointer; font-size: 11px; padding: 3px 6px; color: var(--text-secondary); }
+
+    /* ADD ZONE */
+    .add-zone { display: none; flex-direction: column; gap: 4px; padding: 5px 6px; border-top: 0.5px solid var(--border); background: var(--bg-secondary); }
+    .add-zone.open { display: flex; }
+    .type-toggle { display: flex; gap: 4px; }
+    .type-btn { flex: 1; padding: 3px 0; font-size: 11px; border-radius: var(--radius-md); border: 0.5px solid var(--border-med); background: none; cursor: pointer; color: var(--text-secondary); }
+    .type-btn.on { background: var(--red); color: #fff; border-color: var(--red); }
+    .add-inp { width: 100%; padding: 5px 7px; border-radius: var(--radius-md); border: 0.5px solid var(--border-med); background: var(--bg-primary); font-size: 12px; color: var(--text-primary); font-family: inherit; }
+    .add-inp:focus { outline: none; border-color: var(--red); }
+    .add-row-btns { display: flex; gap: 4px; }
+    .add-ok { flex: 1; padding: 4px; background: var(--red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 12px; }
+    .add-ok:hover { background: var(--red-dark); }
+    .add-cancel { padding: 4px 8px; background: none; border: 0.5px solid var(--border-med); border-radius: var(--radius-md); cursor: pointer; font-size: 12px; color: var(--text-secondary); }
+
+    /* BOTTOM NAV */
+    .bottom-nav { display: flex; background: var(--bg-primary); border-top: 0.5px solid var(--border-med); }
+    .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 0; gap: 2px; border: none; background: none; cursor: pointer; color: var(--text-secondary); font-size: 10px; font-family: inherit; }
+    .nav-btn i { font-size: 22px; }
+    .nav-btn.active { color: var(--red); }
+
+    /* OVERLAYS */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: flex-end; }
+    .overlay.show { display: flex; }
+    .panel { background: var(--bg-primary); width: 100%; border-radius: 16px 16px 0 0; padding: 16px; max-height: 80vh; overflow-y: auto; }
+    .panel-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .panel-hdr h3 { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+    .close-btn { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text-secondary); line-height: 1; }
+    .notes-area { width: 100%; min-height: 220px; padding: 10px; border-radius: var(--radius-md); border: 0.5px solid var(--border-med); background: var(--bg-secondary); font-size: 14px; color: var(--text-primary); font-family: inherit; resize: none; line-height: 1.6; }
+    .save-btn { margin-top: 8px; width: 100%; padding: 10px; background: var(--red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; font-family: inherit; }
+    .save-btn:hover { background: var(--red-dark); }
+
+    /* CALENDAR */
+    .cal-wrap { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+    .cal-wrap.show { display: flex; }
+    .cal-box { background: var(--bg-primary); width: 90%; max-width: 320px; border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 16px; }
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cal-nav button { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text-secondary); padding: 0 6px; }
+    .cal-nav span { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .cgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+    .cdh { font-size: 10px; color: var(--text-secondary); padding: 3px 0; font-weight: 500; }
+    .cd { font-size: 13px; padding: 7px 2px; border-radius: var(--radius-md); color: var(--text-primary); cursor: pointer; }
+    .cd:hover, .cd:active { background: var(--bg-secondary); }
+    .cd.cur-week { background: #f5e8e8; }
+    .cd.today-c { background: var(--red) !important; color: #fff !important; }
+    .cd.empty { cursor: default; pointer-events: none; }
+    .cal-close-btn { margin-top: 12px; width: 100%; padding: 8px; border: 0.5px solid var(--border-med); border-radius: var(--radius-md); background: none; cursor: pointer; font-size: 13px; color: var(--text-secondary); font-family: inherit; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="hdr-pill" id="open-cal" role="button" aria-label="Apri calendario">
+      <i class="ti ti-calendar" aria-hidden="true"></i>
+      <strong id="hdr-month">Giu 2026</strong>
+      <span id="hdr-week">Settim 23</span>
+      <i class="ti ti-chevron-down" style="font-size:12px;color:var(--text-tertiary);" aria-hidden="true"></i>
+    </div>
+  </div>
+  <div class="week-nav">
+    <button id="prev-btn" aria-label="Settimana precedente">&#8249;</button>
+    <span id="week-range"></span>
+    <button id="next-btn" aria-label="Settimana successiva">&#8250;</button>
+  </div>
+  <div class="notebook" id="notebook">
+    <div class="page" id="main-page">
+      <div class="left-col" id="left-col"></div>
+      <div class="spiral-col" id="spiral-col"></div>
+      <div class="right-col" id="right-col"></div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-agenda"><i class="ti ti-notebook"></i>Agenda</button>
+    <button class="nav-btn" id="nav-appunti"><i class="ti ti-notes"></i>Appunti</button>
+    <button class="nav-btn" id="nav-oggi"><i class="ti ti-calendar-event"></i>Oggi</button>
+  </div>
+</div>
+
+<!-- Appunti overlay -->
+<div class="overlay" id="appunti-overlay">
+  <div class="panel">
+    <div class="panel-hdr">
+      <h3>Appunti</h3>
+      <button class="close-btn" id="appunti-close" aria-label="Chiudi">&#x2715;</button>
+    </div>
+    <textarea class="notes-area" id="notes-area" placeholder="Scrivi i tuoi appunti qui..."></textarea>
+    <button class="save-btn" id="save-note-btn">Salva appunti</button>
+  </div>
+</div>
+
+<!-- Calendario overlay -->
+<div class="cal-wrap" id="cal-wrap">
+  <div class="cal-box" id="cal-box">
+    <div class="cal-nav">
+      <button id="cal-prev" aria-label="Mese precedente">&#8249;</button>
+      <span id="cal-label"></span>
+      <button id="cal-next" aria-label="Mese successivo">&#8250;</button>
+    </div>
+    <div class="cgrid" id="cgrid"></div>
+    <button class="cal-close-btn" id="cal-close">Chiudi</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
