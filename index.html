@@ -31,7 +31,6 @@
       .week-nav { background: #1c251c !important; }
       .ring { border-color: #888 !important; }
     }
-
     .app { max-width: 430px; margin: 0 auto; background: var(--bg-tertiary); height: 100dvh; display: flex; flex-direction: column; }
     .header { display: flex; align-items: center; padding: 8px 10px; background: #e8f0e2; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
     .hdr-pill { background: var(--bg-primary); border-radius: var(--radius-md); border: 0.5px solid var(--border); padding: 4px 10px; font-size: 13px; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
@@ -47,7 +46,8 @@
     .ring { width: 13px; height: 9px; border: 2.5px solid #555; border-radius: 50% 50% 0 0 / 60% 60% 0 0; margin: 1.5px 0; }
     .left-col, .right-col { display: flex; flex-direction: column; padding: 4px; gap: 5px; min-height: 0; }
     .right-col { padding-left: 0; }
-    .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; flex: 1 1 0; min-height: 50px; transition: flex 0.2s ease; }
+    .day-card.active { flex: 3 1 0; }
     .weekend-wrap { display: flex; flex-direction: column; flex: 1; gap: 5px; min-height: 0; }
     .weekend-wrap .day-card { flex: 1; }
     .day-hdr { display: flex; align-items: center; gap: 5px; padding: 4px 7px; border-bottom: 0.5px solid var(--border); background: var(--bg-secondary); flex-shrink: 0; cursor: pointer; }
@@ -56,16 +56,14 @@
     .mon-lbl { font-size: 10px; color: var(--text-tertiary); }
     .day-hdr.today { background: var(--red); }
     .day-hdr.today .dow, .day-hdr.today .num, .day-hdr.today .mon-lbl { color: #fff; }
-    .day-body { flex: 1; overflow: hidden; position: relative; cursor: text; }
-    .day-lines { position: absolute; inset: 0; background: repeating-linear-gradient(to bottom, transparent, transparent 21px, var(--border) 21px, var(--border) 22px); pointer-events: none; }
-    .day-editor { position: absolute; inset: 0; padding: 3px 6px 3px 8px; font-size: 13px; line-height: 22px; color: var(--text-primary); font-family: inherit; overflow: hidden; word-break: break-word; outline: none; cursor: text; caret-color: var(--red); }
-    .day-editor:empty::before { content: attr(data-placeholder); color: var(--text-tertiary); pointer-events: none; font-size: 11px; }
-    .day-card.active .day-body { overflow-y: auto; }
-    .day-card.active { flex: 2; }
+    .day-body { flex: 1; overflow-y: auto; position: relative; cursor: text; min-height: 0; }
+    .day-lines { position: absolute; left: 0; right: 0; top: 0; height: max(100%, 300px); background: repeating-linear-gradient(to bottom, transparent, transparent 21px, var(--border) 21px, var(--border) 22px); pointer-events: none; }
+    .day-editor { position: relative; z-index: 1; min-height: 100%; padding: 3px 6px 3px 8px; font-size: 13px; line-height: 22px; color: var(--text-primary); font-family: inherit; word-break: break-word; outline: none; cursor: text; caret-color: var(--red); }
+
+
+
     .day-editor ul { margin: 0; padding-left: 16px; list-style: disc; }
     .day-editor ul li { line-height: 22px; padding: 0; margin: 0; }
-
-    /* TOOLBAR */
     .toolbar { display: none; flex-shrink: 0; background: var(--bg-primary); border-top: 0.5px solid var(--border-med); padding: 5px 8px; gap: 3px; flex-wrap: wrap; align-items: center; width: 100%; z-index: 999; }
     .toolbar.show { display: flex; }
     .toolbar.floating { position: fixed; left: 0; right: 0; max-width: 430px; margin: 0 auto; }
@@ -81,21 +79,27 @@
     .cm-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 1.5px solid transparent; flex-shrink: 0; }
     .cm-dot:hover { border-color: var(--border-med); }
     .cm-dot.active { border-color: var(--red); border-width: 2.5px; }
-
     .bottom-nav { display: flex; background: var(--bg-primary); border-top: 0.5px solid var(--border-med); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
     .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 7px 0; gap: 2px; border: none; background: none; cursor: pointer; color: var(--text-secondary); font-size: 10px; font-family: inherit; }
     .nav-btn i { font-size: 22px; }
     .nav-btn.active { color: var(--red); }
-
     .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: flex-end; }
     .overlay.show { display: flex; }
-    .panel { background: var(--bg-primary); width: 100%; border-radius: 16px 16px 0 0; padding: 16px; max-height: 80vh; overflow-y: auto; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+    .panel { background: var(--bg-primary); width: 100%; border-radius: 16px 16px 0 0; padding: 16px; max-height: 85vh; overflow-y: auto; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
     .panel-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .panel-hdr h3 { font-size: 15px; font-weight: 500; color: var(--text-primary); }
     .close-btn { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text-secondary); line-height: 1; }
-    .notes-area { width: 100%; min-height: 220px; padding: 10px; border-radius: var(--radius-md); border: 0.5px solid var(--border-med); background: var(--bg-secondary); font-size: 14px; color: var(--text-primary); font-family: inherit; resize: none; line-height: 1.6; }
+    .notes-area { width: 100%; min-height: 180px; padding: 10px; border-radius: var(--radius-md); border: 0.5px solid var(--border-med); background: var(--bg-secondary); font-size: 14px; color: var(--text-primary); font-family: inherit; resize: none; line-height: 1.6; }
     .save-btn { margin-top: 8px; width: 100%; padding: 10px; background: var(--red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; font-family: inherit; }
-
+    .section-title { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .io-row { display: flex; gap: 8px; }
+    .io-btn { flex: 1; padding: 9px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .io-btn.export { background: var(--bg-secondary); border: 0.5px solid var(--border-med); color: var(--text-primary); }
+    .io-btn.import { background: var(--bg-secondary); border: 0.5px solid var(--border-med); color: var(--text-primary); }
+    .io-btn:hover { background: var(--border); }
+    .io-note { font-size: 11px; color: var(--text-tertiary); margin-top: 6px; line-height: 1.5; }
+    .update-banner { display: none; background: #1e8449; color: #fff; font-size: 12px; padding: 7px 12px; text-align: center; cursor: pointer; flex-shrink: 0; }
+    .update-banner.show { display: block; }
     .cal-wrap { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
     .cal-wrap.show { display: flex; }
     .cal-box { background: var(--bg-primary); width: 90%; max-width: 320px; border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 16px; }
@@ -114,6 +118,9 @@
 </head>
 <body>
 <div class="app">
+  <div class="update-banner" id="update-banner">
+    Aggiornamento disponibile — tocca per ricaricare
+  </div>
   <div class="header">
     <div class="hdr-pill" id="open-cal" role="button" aria-label="Apri calendario">
       <i class="ti ti-calendar" aria-hidden="true"></i>
@@ -141,18 +148,12 @@
     <button class="tb-btn" id="tb-strike" title="Barrato"><s>S</s></button>
     <div class="tb-sep"></div>
     <select class="size-select" id="tb-size" title="Dimensione testo">
-      <option value="9">9</option>
-      <option value="9.5">9.5</option>
-      <option value="10">10</option>
-      <option value="10.5">10.5</option>
-      <option value="11">11</option>
-      <option value="11.5">11.5</option>
-      <option value="12">12</option>
-      <option value="12.5">12.5</option>
-      <option value="13" selected>13</option>
-      <option value="13.5">13.5</option>
-      <option value="14">14</option>
-      <option value="14.5">14.5</option>
+      <option value="9">9</option><option value="9.5">9.5</option>
+      <option value="10">10</option><option value="10.5">10.5</option>
+      <option value="11">11</option><option value="11.5">11.5</option>
+      <option value="12">12</option><option value="12.5">12.5</option>
+      <option value="13" selected>13</option><option value="13.5">13.5</option>
+      <option value="14">14</option><option value="14.5">14.5</option>
       <option value="15">15</option>
     </select>
     <div class="tb-sep"></div>
@@ -176,8 +177,10 @@
     <button class="nav-btn active" id="nav-agenda"><i class="ti ti-notebook"></i>Agenda</button>
     <button class="nav-btn" id="nav-appunti"><i class="ti ti-notes"></i>Appunti</button>
     <button class="nav-btn" id="nav-oggi"><i class="ti ti-calendar-event"></i>Oggi</button>
+    <button class="nav-btn" id="nav-menu"><i class="ti ti-settings"></i>Menu</button>
   </div>
 </div>
+
 <div class="overlay" id="appunti-overlay">
   <div class="panel">
     <div class="panel-hdr"><h3>Appunti</h3><button class="close-btn" id="appunti-close" aria-label="Chiudi">&#x2715;</button></div>
@@ -185,6 +188,20 @@
     <button class="save-btn" id="save-note-btn">Salva appunti</button>
   </div>
 </div>
+
+<div class="overlay" id="menu-overlay">
+  <div class="panel">
+    <div class="panel-hdr"><h3>Menu</h3><button class="close-btn" id="menu-close" aria-label="Chiudi">&#x2715;</button></div>
+    <div class="section-title">Backup dati</div>
+    <div class="io-row">
+      <button class="io-btn export" id="btn-export"><i class="ti ti-download" aria-hidden="true"></i> Esporta</button>
+      <button class="io-btn import" id="btn-import"><i class="ti ti-upload" aria-hidden="true"></i> Importa</button>
+    </div>
+    <input type="file" id="file-input" accept=".json" style="display:none" />
+    <p class="io-note">Esporta salva un file JSON con tutti i tuoi dati. Importa su un nuovo device per ripristinare tutto.</p>
+  </div>
+</div>
+
 <div class="cal-wrap" id="cal-wrap">
   <div class="cal-box" id="cal-box">
     <div class="cal-nav">
@@ -196,6 +213,7 @@
     <button class="cal-close-btn" id="cal-close">Chiudi</button>
   </div>
 </div>
+
 <script src="app.js"></script>
 </body>
 </html>

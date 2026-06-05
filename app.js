@@ -8,6 +8,7 @@ function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padSt
 
 let weekOffset = 0, calY, calM;
 let activeEditor = null, savedRange = null, currentColor = '#1a1a1a';
+let isEditing = false;
 
 function getMonday(offset) {
   const t = new Date(); t.setHours(0,0,0,0);
@@ -85,7 +86,7 @@ function makeCard(d, today) {
   const lines = document.createElement('div'); lines.className = 'day-lines';
   const editor = document.createElement('div');
   editor.className = 'day-editor'; editor.contentEditable = 'true';
-  editor.setAttribute('data-placeholder', 'Tocca per scrivere...');
+  
   editor.setAttribute('spellcheck', 'true'); editor.dataset.key = key;
   const saved = db[key] || ''; if (saved) editor.innerHTML = saved;
 
@@ -98,14 +99,14 @@ function makeCard(d, today) {
     }, 400);
   });
   editor.addEventListener('focus', function() {
-    activeEditor = this; card.classList.add('active');
+    activeEditor = this; isEditing = true; card.classList.add('active');
     showToolbar(); updateToolbarState();
   });
   editor.addEventListener('blur', function() {
     setTimeout(() => {
       if (!toolbar.contains(document.activeElement) && document.activeElement !== this) {
         card.classList.remove('active');
-        if (activeEditor === this) { activeEditor = null; hideToolbar(); }
+        if (activeEditor === this) { activeEditor = null; isEditing = false; hideToolbar(); }
       }
     }, 150);
   });
@@ -114,6 +115,7 @@ function makeCard(d, today) {
   body.addEventListener('click', function(e) {
     if (e.target === body || e.target === lines) { editor.focus(); placeCaretAtEnd(editor); }
   });
+  body.addEventListener('touchmove', function(e) { if (isEditing) e.stopPropagation(); }, { passive: true });
   hdr.addEventListener('click', () => { editor.focus(); placeCaretAtEnd(editor); });
   body.appendChild(lines); body.appendChild(editor);
   card.appendChild(hdr); card.appendChild(body);
@@ -200,8 +202,8 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.color-picker-wrap')) document.getElementById('color-menu').classList.remove('show');
 });
 
-document.getElementById('prev-btn').onclick = () => { weekOffset--; renderWeek(); };
-document.getElementById('next-btn').onclick = () => { weekOffset++; renderWeek(); };
+document.getElementById('prev-btn').onclick = () => { if (!isEditing) { weekOffset--; renderWeek(); } };
+document.getElementById('next-btn').onclick = () => { if (!isEditing) { weekOffset++; renderWeek(); } };
 document.getElementById('nav-agenda').onclick = () => { setNav('agenda'); document.getElementById('appunti-overlay').classList.remove('show'); };
 document.getElementById('nav-appunti').onclick = () => {
   setNav('appunti');
@@ -226,8 +228,8 @@ function setNav(w) { ['agenda','appunti','oggi'].forEach(n => document.getElemen
 
 let swipeX = 0, mX = 0, mDown = false;
 const nb = document.getElementById('notebook');
-nb.addEventListener('touchstart', e => { swipeX = e.touches[0].clientX; }, { passive: true });
-nb.addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - swipeX; if (Math.abs(dx) > 55) { dx < 0 ? weekOffset++ : weekOffset--; renderWeek(); } }, { passive: true });
+nb.addEventListener('touchstart', e => { if (isEditing) return; swipeX = e.touches[0].clientX; }, { passive: true });
+nb.addEventListener('touchend', e => { if (isEditing) return; const dx = e.changedTouches[0].clientX - swipeX; if (Math.abs(dx) > 55) { dx < 0 ? weekOffset++ : weekOffset--; renderWeek(); } }, { passive: true });
 nb.addEventListener('mousedown', e => { if (e.target.isContentEditable || e.target.closest('[contenteditable]')) return; mX = e.clientX; mDown = true; });
 nb.addEventListener('mouseup', e => { if (!mDown) return; mDown = false; const dx = e.clientX - mX; if (Math.abs(dx) > 55) { dx < 0 ? weekOffset++ : weekOffset--; renderWeek(); } });
 
@@ -268,3 +270,77 @@ document.getElementById('cal-wrap').addEventListener('click', e => { if (e.targe
 document.getElementById('cal-box').addEventListener('click', e => e.stopPropagation());
 
 renderWeek();
+
+// ── SERVICE WORKER ───────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          const banner = document.getElementById('update-banner');
+          if (banner) {
+            banner.classList.add('show');
+            banner.onclick = () => { newSW.postMessage({ type: 'SKIP_WAITING' }); window.location.reload(); };
+          }
+        }
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+}
+
+// ── EXPORT / IMPORT ──────────────────────────────────────────────
+document.getElementById('btn-export').addEventListener('click', () => {
+  const payload = {
+    version: 1,
+    exported: new Date().toISOString(),
+    agenda: JSON.parse(localStorage.getItem('ps_v8') || '{}'),
+    notes: localStorage.getItem('ps_notes') || ''
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'agendabb-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('btn-import').addEventListener('click', () => {
+  document.getElementById('file-input').click();
+});
+
+document.getElementById('file-input').addEventListener('change', function() {
+  const file = this.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version || !data.agenda) { alert('File non valido.'); return; }
+      if (!confirm('Importare i dati? I dati attuali verranno sostituiti.')) return;
+      localStorage.setItem('ps_v8', JSON.stringify(data.agenda));
+      if (data.notes) localStorage.setItem('ps_notes', data.notes);
+      db = data.agenda;
+      renderWeek();
+      document.getElementById('menu-overlay').classList.remove('show');
+      setNav('agenda');
+      alert('Dati importati con successo!');
+    } catch(err) { alert('Errore nella lettura del file.'); }
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+
+// ── MENU NAV ─────────────────────────────────────────────────────
+document.getElementById('nav-menu').addEventListener('click', () => {
+  setNav('menu');
+  document.getElementById('menu-overlay').classList.add('show');
+});
+document.getElementById('menu-close').addEventListener('click', () => {
+  document.getElementById('menu-overlay').classList.remove('show');
+  setNav('agenda');
+});
+document.getElementById('menu-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) { e.currentTarget.classList.remove('show'); setNav('agenda'); }
+});
