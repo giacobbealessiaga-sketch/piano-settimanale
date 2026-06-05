@@ -44,7 +44,7 @@
       .ring { border-color: #888 !important; }
     }
 
-    .app { max-width: 430px; margin: 0 auto; background: var(--bg-tertiary); min-height: 100dvh; display: flex; flex-direction: column; }
+    .app { max-width: 430px; margin: 0 auto; background: var(--bg-tertiary); height: 100dvh; display: flex; flex-direction: column; }
 
     /* HEADER */
     .header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #e8f0e2; border-bottom: 0.5px solid var(--border); }
@@ -59,23 +59,25 @@
     .week-nav span { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
 
     /* NOTEBOOK */
-    .notebook { flex: 1; overflow: hidden; touch-action: pan-y; cursor: grab; }
+    .notebook { flex: 1; overflow: hidden; touch-action: pan-y; cursor: grab; display: flex; flex-direction: column; min-height: 0; }
     .notebook.dragging { cursor: grabbing; }
-    .page { display: grid; grid-template-columns: 1fr 18px 1fr; }
+    .page { display: grid; grid-template-columns: 1fr 18px 1fr; flex: 1; min-height: 0; }
     .spiral-col { display: flex; flex-direction: column; align-items: center; padding: 4px 0; pointer-events: none; }
     .ring { width: 13px; height: 9px; border: 2.5px solid #555; border-radius: 50% 50% 0 0 / 60% 60% 0 0; margin: 1.5px 0; }
-    .left-col, .right-col { display: flex; flex-direction: column; padding: 4px; }
+    .left-col, .right-col { display: flex; flex-direction: column; padding: 4px; gap: 5px; min-height: 0; }
     .right-col { padding-left: 0; }
 
     /* DAY CARD */
-    .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; margin-bottom: 5px; }
+    .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .weekend-wrap { display: flex; flex-direction: column; flex: 1; gap: 5px; min-height: 0; }
+    .weekend-wrap .day-card { flex: 1; }
     .day-hdr { display: flex; align-items: center; gap: 5px; padding: 4px 7px; border-bottom: 0.5px solid var(--border); background: var(--bg-secondary); flex-shrink: 0; cursor: pointer; }
     .day-hdr .dow { font-size: 10px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; }
     .day-hdr .num { font-size: 16px; font-weight: 500; color: var(--text-primary); line-height: 1; }
     .day-hdr .mon-lbl { font-size: 10px; color: var(--text-tertiary); }
     .day-hdr.today { background: var(--red); }
     .day-hdr.today .dow, .day-hdr.today .num, .day-hdr.today .mon-lbl { color: #fff; }
-    .day-body { padding: 4px 6px; background: repeating-linear-gradient(to bottom, transparent, transparent 20px, var(--border) 20px, var(--border) 21px); min-height: 80px; cursor: pointer; }
+    .day-body { flex: 1; padding: 4px 6px; background: repeating-linear-gradient(to bottom, transparent, transparent 20px, var(--border) 20px, var(--border) 21px); cursor: pointer; overflow: hidden; }
     .weekend-body { min-height: 38px; }
 
     /* ENTRIES */
@@ -112,7 +114,7 @@
     .add-cancel { padding: 4px 8px; background: none; border: 0.5px solid var(--border-med); border-radius: var(--radius-md); cursor: pointer; font-size: 12px; color: var(--text-secondary); }
 
     /* BOTTOM NAV */
-    .bottom-nav { display: flex; background: var(--bg-primary); border-top: 0.5px solid var(--border-med); }
+    .bottom-nav { display: flex; background: var(--bg-primary); border-top: 0.5px solid var(--border-med); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
     .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 0; gap: 2px; border: none; background: none; cursor: pointer; color: var(--text-secondary); font-size: 10px; font-family: inherit; }
     .nav-btn i { font-size: 22px; }
     .nav-btn.active { color: var(--red); }
