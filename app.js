@@ -111,7 +111,7 @@ function makeCard(d, today) {
   });
   editor.addEventListener('focus', function() {
     activeEditor = this; isEditing = true; card.classList.add('active');
-    showToolbar(); updateToolbarState();
+    showToolbar('main'); updateToolbarState();
   });
   editor.addEventListener('blur', function() {
     setTimeout(() => {
