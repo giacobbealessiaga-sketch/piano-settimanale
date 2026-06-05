@@ -1,7 +1,5 @@
 const DAYS = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
-const DAYS_FULL = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
 const MONTHS = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-const MONTHS_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 const MFULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 
 let db = JSON.parse(localStorage.getItem('ps_v8') || '{}');
@@ -9,7 +7,129 @@ function save() { localStorage.setItem('ps_v8', JSON.stringify(db)); }
 function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 
 let weekOffset = 0, calY, calM;
+
+// ── DAY VIEW ──────────────────────────────────────────────────────
+const DAYS_FULL = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+const MONTHS_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 let dvDate = null;
+
+function openDay(d) {
+  d = new Date(d); d.setHours(0,0,0,0); dvDate = d;
+  renderDayView();
+  document.getElementById('day-view').classList.add('open');
+  setTimeout(() => { const ed = document.getElementById('dv-editor'); ed.focus(); placeCaretAtEnd(ed); }, 120);
+}
+function renderDayView() {
+  const key = dayKey(dvDate);
+  const today = new Date(); today.setHours(0,0,0,0);
+  document.getElementById('dv-dow').textContent = DAYS_FULL[dvDate.getDay()];
+  document.getElementById('dv-date').textContent = dvDate.getDate() + ' ' + MONTHS_FULL[dvDate.getMonth()] + ' ' + dvDate.getFullYear();
+  document.getElementById('dv-dow').style.color = dvDate.getTime() === today.getTime() ? '#c0392b' : '';
+  document.getElementById('dv-editor').innerHTML = db[key] || '';
+}
+let dvSaveTimer = null;
+// dv-editor events wired after DOM ready (see bottom)
+function closeDay() {
+  document.getElementById('day-view').classList.remove('open');
+  hideToolbar('dv'); dvDate = null; activeEditor = null;
+}
+function wireDayViewEvents() {
+  const dvEd = document.getElementById('dv-editor');
+  dvEd.addEventListener('input', function() {
+    const key = dayKey(dvDate);
+    const html = this.innerHTML.replace(/<br\s*\/?>\s*$/, '');
+    if (html && html !== '<br>') db[key] = html; else delete db[key];
+    save();
+    clearTimeout(dvSaveTimer);
+    dvSaveTimer = setTimeout(() => {
+      
+      const card = document.querySelector('.day-editor[data-key="' + key + '"]');
+      if (card && document.activeElement !== card) card.innerHTML = db[key] || '';
+    }, 600);
+  });
+  dvEd.addEventListener('focus', function() { activeEditor = this; showToolbar('dv'); updateDvToolbarState(); });
+  dvEd.addEventListener('blur', function() {
+    setTimeout(() => {
+      const tbDv = document.getElementById('toolbar-dv');
+      if (tbDv && !tbDv.contains(document.activeElement) && document.activeElement !== this) {
+        if (activeEditor === this) { activeEditor = null; hideToolbar('dv'); }
+      }
+    }, 150);
+  });
+  dvEd.addEventListener('keyup', updateDvToolbarState);
+  dvEd.addEventListener('mouseup', updateDvToolbarState);
+
+  document.getElementById('dv-back').addEventListener('click', closeDay);
+  document.getElementById('dv-prev').addEventListener('click', () => {
+    const d = new Date(dvDate); d.setDate(d.getDate() - 1); dvDate = d;
+    renderDayView(); setTimeout(() => document.getElementById('dv-editor').focus(), 50);
+  });
+  document.getElementById('dv-next').addEventListener('click', () => {
+    const d = new Date(dvDate); d.setDate(d.getDate() + 1); dvDate = d;
+    renderDayView(); setTimeout(() => document.getElementById('dv-editor').focus(), 50);
+  });
+  document.getElementById('dv-nav-oggi').addEventListener('click', () => openDay(new Date()));
+  document.getElementById('dv-nav-appunti').addEventListener('click', () => {
+    closeDay();
+    document.getElementById('notes-area').value = localStorage.getItem('ps_notes') || '';
+    document.getElementById('appunti-overlay').classList.add('show');
+  });
+  const dvMenu = document.getElementById('dv-nav-menu');
+  if (dvMenu) dvMenu.addEventListener('click', () => {
+    closeDay();
+    const mo = document.getElementById('menu-overlay');
+    if (mo) mo.classList.add('show');
+    setNav('menu');
+  });
+
+  // DV toolbar buttons
+  function tbDvBind(id, fn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('mousedown', e => { e.preventDefault(); fn(); });
+    el.addEventListener('touchend', e => { e.preventDefault(); fn(); });
+  }
+  tbDvBind('dv-bold', () => fmt('bold'));
+  tbDvBind('dv-italic', () => fmt('italic'));
+  tbDvBind('dv-under', () => fmt('underline'));
+  tbDvBind('dv-strike', () => fmt('strikeThrough'));
+  tbDvBind('dv-ul', toggleBullet);
+
+  const dvSize = document.getElementById('dv-size');
+  dvSize.addEventListener('mousedown', e => e.stopPropagation());
+  dvSize.addEventListener('change', function() {
+    if (!activeEditor) return;
+    activeEditor.focus(); restoreRange();
+    document.execCommand('fontSize', false, '7');
+    activeEditor.querySelectorAll('font[size="7"]').forEach(n => { n.removeAttribute('size'); n.style.fontSize = parseFloat(this.value) + 'px'; });
+    saveRange(); activeEditor.dispatchEvent(new Event('input'));
+  });
+
+  document.getElementById('dv-cur-color').addEventListener('mousedown', e => {
+    e.preventDefault(); e.stopPropagation();
+    document.getElementById('dv-color-menu').classList.toggle('show');
+  });
+  document.querySelectorAll('#dv-color-menu .cm-dot').forEach(dot => {
+    const apply = function(e) {
+      e.preventDefault(); e.stopPropagation();
+      currentColor = this.dataset.color;
+      document.getElementById('dv-cur-color').style.background = currentColor;
+      document.querySelectorAll('#dv-color-menu .cm-dot').forEach(d => d.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById('dv-color-menu').classList.remove('show');
+      fmt('foreColor', currentColor);
+    };
+    dot.addEventListener('mousedown', apply); dot.addEventListener('touchend', apply);
+  });
+}
+function updateDvToolbarState() {
+  if (!activeEditor) return; saveRange();
+  const map = {bold:'dv-bold',italic:'dv-italic',underline:'dv-under',strikeThrough:'dv-strike',insertUnorderedList:'dv-ul'};
+  Object.entries(map).forEach(([cmd, id]) => {
+    const el = document.getElementById(id); if (el) el.classList.toggle('on', document.queryCommandState(cmd));
+  });
+}
+
 let activeEditor = null, savedRange = null, currentColor = '#1a1a1a';
 let isEditing = false;
 
@@ -44,20 +164,17 @@ function positionToolbar() {
     active.classList.add('floating');
     active.style.top = (vv.offsetTop + vv.height - active.offsetHeight) + 'px';
     bottomNav.style.visibility = vv.height < window.innerHeight * 0.75 ? 'hidden' : 'visible';
-  } else {
-    active.classList.remove('floating'); active.style.top = '';
-    bottomNav.style.visibility = 'visible';
-  }
+  } else { active.classList.remove('floating'); active.style.top = ''; bottomNav.style.visibility = 'visible'; }
 }
 function showToolbar(which) {
   const tbDv = document.getElementById('toolbar-dv');
-  if (which === 'dv') { tbDv.classList.add('show'); toolbar.classList.remove('show','floating'); }
+  if (which === 'dv') { if(tbDv) tbDv.classList.add('show'); toolbar.classList.remove('show','floating'); }
   else { toolbar.classList.add('show'); if(tbDv) tbDv.classList.remove('show','floating'); }
   positionToolbar();
 }
 function hideToolbar(which) {
   const tbDv = document.getElementById('toolbar-dv');
-  if (which === 'dv') { if(tbDv) tbDv.classList.remove('show','floating'); }
+  if (which === 'dv') { if(tbDv) { tbDv.classList.remove('show','floating'); tbDv.style.top=''; } }
   else { toolbar.classList.remove('show','floating'); toolbar.style.top = ''; }
   bottomNav.style.visibility = 'visible';
 }
@@ -149,7 +266,8 @@ function fmt(cmd, val) {
   if (!activeEditor) return;
   activeEditor.focus(); restoreRange();
   document.execCommand(cmd, false, val || null);
-  saveRange(); updateToolbarState();
+  saveRange();
+  activeEditor === document.getElementById('dv-editor') ? updateDvToolbarState() : updateToolbarState();
   activeEditor.dispatchEvent(new Event('input'));
 }
 
@@ -159,7 +277,8 @@ function toggleBullet() {
   const isActive = document.queryCommandState('insertUnorderedList');
   document.execCommand('insertUnorderedList', false, null);
   if (isActive) activeEditor.normalize();
-  saveRange(); updateToolbarState();
+  saveRange();
+  activeEditor === document.getElementById('dv-editor') ? updateDvToolbarState() : updateToolbarState();
   activeEditor.dispatchEvent(new Event('input'));
 }
 
@@ -221,114 +340,7 @@ document.getElementById('nav-appunti').onclick = () => {
   document.getElementById('notes-area').value = localStorage.getItem('ps_notes') || '';
   document.getElementById('appunti-overlay').classList.add('show');
 };
-document.getElementById('nav-oggi').onclick = () => {
-  setNav('agenda'); weekOffset = 0; 
-// ── DAY VIEW ─────────────────────────────────────────────────────
-function openDay(d) {
-  d = new Date(d); d.setHours(0,0,0,0); dvDate = d;
-  renderDayView();
-  document.getElementById('day-view').classList.add('open');
-  setTimeout(() => { const ed = document.getElementById('dv-editor'); ed.focus(); placeCaretAtEnd(ed); }, 120);
-}
-
-function renderDayView() {
-  const key = dayKey(dvDate);
-  const today = new Date(); today.setHours(0,0,0,0);
-  document.getElementById('dv-dow').textContent = DAYS_FULL[dvDate.getDay()];
-  document.getElementById('dv-date').textContent = dvDate.getDate() + ' ' + MONTHS_FULL[dvDate.getMonth()] + ' ' + dvDate.getFullYear();
-  document.getElementById('dv-dow').style.color = dvDate.getTime() === today.getTime() ? '#c0392b' : '';
-  document.getElementById('dv-editor').innerHTML = db[key] || '';
-}
-
-let dvSaveTimer = null;
-document.getElementById('dv-editor').addEventListener('input', function() {
-  const key = dayKey(dvDate);
-  const html = this.innerHTML.replace(/<br\s*\/?>\s*$/, '');
-  if (html && html !== '<br>') db[key] = html; else delete db[key];
-  save();
-  clearTimeout(dvSaveTimer);
-  dvSaveTimer = setTimeout(() => {
-    const card = document.querySelector('.day-editor[data-key="' + key + '"]');
-    if (card && document.activeElement !== card) card.innerHTML = db[key] || '';
-  }, 600);
-});
-document.getElementById('dv-editor').addEventListener('focus', function() {
-  activeEditor = this; showToolbar('dv'); updateDvToolbarState();
-});
-document.getElementById('dv-editor').addEventListener('blur', function() {
-  setTimeout(() => {
-    const tbDv = document.getElementById('toolbar-dv');
-    if (!tbDv.contains(document.activeElement) && document.activeElement !== this) {
-      if (activeEditor === this) { activeEditor = null; hideToolbar('dv'); }
-    }
-  }, 150);
-});
-document.getElementById('dv-editor').addEventListener('keyup', updateDvToolbarState);
-document.getElementById('dv-editor').addEventListener('mouseup', updateDvToolbarState);
-
-function closeDay() {
-  document.getElementById('day-view').classList.remove('open');
-  hideToolbar('dv'); dvDate = null; activeEditor = null;
-}
-document.getElementById('dv-back').addEventListener('click', closeDay);
-document.getElementById('dv-prev').addEventListener('click', () => {
-  const d = new Date(dvDate); d.setDate(d.getDate() - 1); dvDate = d;
-  renderDayView(); setTimeout(() => document.getElementById('dv-editor').focus(), 50);
-});
-document.getElementById('dv-next').addEventListener('click', () => {
-  const d = new Date(dvDate); d.setDate(d.getDate() + 1); dvDate = d;
-  renderDayView(); setTimeout(() => document.getElementById('dv-editor').focus(), 50);
-});
-document.getElementById('dv-nav-oggi').addEventListener('click', () => openDay(new Date()));
-document.getElementById('dv-nav-appunti').addEventListener('click', () => {
-  closeDay();
-  document.getElementById('notes-area').value = localStorage.getItem('ps_notes') || '';
-  document.getElementById('appunti-overlay').classList.add('show');
-});
-
-// DV toolbar bindings
-function updateDvToolbarState() {
-  if (!activeEditor) return; saveRange();
-  const map = {bold:'dv-bold',italic:'dv-italic',underline:'dv-under',strikeThrough:'dv-strike',insertUnorderedList:'dv-ul'};
-  Object.entries(map).forEach(([cmd,id]) => document.getElementById(id).classList.toggle('on', document.queryCommandState(cmd)));
-}
-function tbBindDv(id, fn) {
-  const el = document.getElementById(id);
-  el.addEventListener('mousedown', e => { e.preventDefault(); fn(); });
-  el.addEventListener('touchend', e => { e.preventDefault(); fn(); });
-}
-tbBindDv('dv-bold', () => fmt('bold'));
-tbBindDv('dv-italic', () => fmt('italic'));
-tbBindDv('dv-under', () => fmt('underline'));
-tbBindDv('dv-strike', () => fmt('strikeThrough'));
-tbBindDv('dv-ul', toggleBullet);
-
-document.getElementById('dv-size').addEventListener('mousedown', e => e.stopPropagation());
-document.getElementById('dv-size').addEventListener('change', function() {
-  if (!activeEditor) return;
-  activeEditor.focus(); restoreRange();
-  document.execCommand('fontSize', false, '7');
-  activeEditor.querySelectorAll('font[size="7"]').forEach(n => { n.removeAttribute('size'); n.style.fontSize = parseFloat(this.value) + 'px'; });
-  saveRange(); activeEditor.dispatchEvent(new Event('input'));
-});
-
-document.getElementById('dv-cur-color').addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); document.getElementById('dv-color-menu').classList.toggle('show'); });
-document.querySelectorAll('#dv-color-menu .cm-dot').forEach(dot => {
-  const apply = function(e) {
-    e.preventDefault(); e.stopPropagation();
-    currentColor = this.dataset.color;
-    document.getElementById('dv-cur-color').style.background = currentColor;
-    document.querySelectorAll('#dv-color-menu .cm-dot').forEach(d => d.classList.remove('active'));
-    this.classList.add('active');
-    document.getElementById('dv-color-menu').classList.remove('show');
-    fmt('foreColor', currentColor);
-  };
-  dot.addEventListener('mousedown', apply); dot.addEventListener('touchend', apply);
-});
-
-renderWeek();
-  openDay(new Date());
-};
+document.getElementById('nav-oggi').onclick = () => { setNav('agenda'); weekOffset = 0; renderWeek(); openDay(new Date()); };
 document.getElementById('appunti-close').onclick = () => { document.getElementById('appunti-overlay').classList.remove('show'); setNav('agenda'); };
 document.getElementById('appunti-overlay').onclick = e => { if (e.target === e.currentTarget) { e.currentTarget.classList.remove('show'); setNav('agenda'); } };
 document.getElementById('save-note-btn').onclick = function() {
@@ -380,7 +392,6 @@ document.getElementById('cal-close').addEventListener('click', e => { e.stopProp
 document.getElementById('cal-wrap').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('show'); });
 document.getElementById('cal-box').addEventListener('click', e => e.stopPropagation());
 
-renderWeek();
 
 // ── SERVICE WORKER ───────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
@@ -454,14 +465,4 @@ document.getElementById('menu-close').addEventListener('click', () => {
 });
 document.getElementById('menu-overlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) { e.currentTarget.classList.remove('show'); setNav('agenda'); }
-});
-
-// dv-nav-menu
-const dvNavMenu = document.getElementById('dv-nav-menu');
-if (dvNavMenu) {
-  dvNavMenu.addEventListener('click', () => {
-    closeDay();
-    setNav('menu');
-    document.getElementById('menu-overlay').classList.add('show');
-  });
-}
+});renderWeek();
