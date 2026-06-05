@@ -465,4 +465,6 @@ document.getElementById('menu-close').addEventListener('click', () => {
 });
 document.getElementById('menu-overlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) { e.currentTarget.classList.remove('show'); setNav('agenda'); }
-});renderWeek();
+});
+wireDayViewEvents();
+renderWeek();
