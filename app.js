@@ -51,7 +51,7 @@ function renderWeek() {
   [days[3], days[4]].forEach(d => right.appendChild(makeCard(d, today, false)));
 
   const wkWrap = document.createElement('div');
-  wkWrap.style.cssText = 'display:flex;flex-direction:column;gap:0;flex:1;';
+  wkWrap.className = 'weekend-wrap';
   [days[5], days[6]].forEach(d => {
     const c = makeCard(d, today, true); c.style.flex = '1'; wkWrap.appendChild(c);
   });
