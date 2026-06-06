@@ -178,8 +178,10 @@ function renderWeek() {
   const mon = getMonday(weekOffset);
   const days = [];
   for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(d.getDate() + i); days.push(d); }
-  document.getElementById('hdr-month').textContent = MONTHS[mon.getMonth()] + ' ' + mon.getFullYear();
-  document.getElementById('week-range').textContent =
+  const hdrMonth = document.getElementById('hdr-month');
+  if (hdrMonth) hdrMonth.textContent = MONTHS[mon.getMonth()] + ' ' + mon.getFullYear();
+  const weekRangeEl = document.getElementById('week-range');
+  if (weekRangeEl) weekRangeEl.textContent =
     days[0].getDate() + ' ' + MONTHS[days[0].getMonth()] + ' – ' +
     days[6].getDate() + ' ' + MONTHS[days[6].getMonth()] + ' ' + days[6].getFullYear();
   const left = document.getElementById('left-col'), right = document.getElementById('right-col');
