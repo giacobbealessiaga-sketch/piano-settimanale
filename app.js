@@ -37,8 +37,8 @@ function wireDayViewEvents() {
   const dvEd = document.getElementById('dv-editor');
   dvEd.addEventListener('input', function() {
     const key = dayKey(dvDate);
-    const html = this.innerHTML.replace(/<br\s*\/?>\s*$/, '');
-    if (html && html !== '<br>') db[key] = html; else delete db[key];
+    const html = this.innerHTML;
+    if (html && html !== '<br>' && html !== '') db[key] = html; else delete db[key];
     save();
     clearTimeout(dvSaveTimer);
     dvSaveTimer = setTimeout(() => {
@@ -179,7 +179,6 @@ function renderWeek() {
   const days = [];
   for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(d.getDate() + i); days.push(d); }
   document.getElementById('hdr-month').textContent = MONTHS[mon.getMonth()] + ' ' + mon.getFullYear();
-  document.getElementById('hdr-week').textContent = 'Settim ' + getWeekNum(mon);
   document.getElementById('week-range').textContent =
     days[0].getDate() + ' ' + MONTHS[days[0].getMonth()] + ' – ' +
     days[6].getDate() + ' ' + MONTHS[days[6].getMonth()] + ' ' + days[6].getFullYear();
@@ -254,7 +253,11 @@ function restoreRange() {
 
 function fmt(cmd, val) {
   if (!activeEditor) return;
-  activeEditor.focus(); restoreRange();
+  activeEditor.focus();
+  // Only restore range if selection is currently collapsed or outside editor
+  const sel = window.getSelection();
+  const hasSelection = sel && !sel.isCollapsed && activeEditor.contains(sel.anchorNode);
+  if (!hasSelection) restoreRange();
   document.execCommand(cmd, false, val || null);
   saveRange();
   activeEditor === document.getElementById('dv-editor') ? updateDvToolbarState() : updateToolbarState();
@@ -312,22 +315,20 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.color-picker-wrap')) document.getElementById('color-menu').classList.remove('show');
 });
 
-document.getElementById('prev-btn').onclick = () => { if (!isEditing) { weekOffset--; renderWeek(); } };
-document.getElementById('next-btn').onclick = () => { if (!isEditing) { weekOffset++; renderWeek(); } };
 document.getElementById('nav-agenda').onclick = () => { setNav('agenda'); document.getElementById('appunti-overlay').classList.remove('show'); };
 document.getElementById('nav-appunti').onclick = () => {
   setNav('appunti');
   document.getElementById('notes-area').value = localStorage.getItem('ps_notes') || '';
   document.getElementById('appunti-overlay').classList.add('show');
 };
-document.getElementById('nav-oggi').onclick = () => { setNav('agenda'); weekOffset = 0; renderWeek(); openDay(new Date()); };
+document.getElementById('nav-oggi').onclick = () => { weekOffset = 0; renderWeek(); setNav('oggi'); };
 document.getElementById('appunti-close').onclick = () => { document.getElementById('appunti-overlay').classList.remove('show'); setNav('agenda'); };
 document.getElementById('appunti-overlay').onclick = e => { if (e.target === e.currentTarget) { e.currentTarget.classList.remove('show'); setNav('agenda'); } };
 document.getElementById('save-note-btn').onclick = function() {
   localStorage.setItem('ps_notes', document.getElementById('notes-area').value);
   this.textContent = 'Salvato!'; setTimeout(() => this.textContent = 'Salva appunti', 1500);
 };
-function setNav(w) { ['agenda','appunti','oggi'].forEach(n => document.getElementById('nav-' + n).classList.toggle('active', n === w)); }
+function setNav(w) { ['agenda','appunti','oggi'].forEach(n => { const el = document.getElementById('nav-' + n); if(el) el.classList.toggle('active', n === w); }); }
 
 let swipeX = 0, mX = 0, mDown = false;
 const nb = document.getElementById('notebook');
