@@ -213,8 +213,8 @@ function makeCard(d, today) {
   editor.addEventListener('input', function() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      const html = this.innerHTML.replace(/<br\s*\/?>\s*$/, '');
-      if (html && html !== '<br>') db[key] = html; else delete db[key]; save();
+      const html = this.innerHTML;
+      if (html && html !== '<br>' && html.trim() !== '') db[key] = html; else delete db[key]; save();
     }, 400);
   });
   editor.addEventListener('focus', function() {
@@ -323,7 +323,15 @@ document.getElementById('nav-appunti').onclick = () => {
   document.getElementById('notes-area').value = localStorage.getItem('ps_notes') || '';
   document.getElementById('appunti-overlay').classList.add('show');
 };
-document.getElementById('nav-oggi').onclick = () => { weekOffset = 0; renderWeek(); setNav('oggi'); };
+document.getElementById('nav-oggi').onclick = () => {
+  weekOffset = 0; renderWeek(); setNav('oggi');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const key = dayKey(today);
+  setTimeout(() => {
+    const ed = document.querySelector('.day-editor[data-key="' + key + '"]');
+    if (ed) { ed.focus(); placeCaretAtEnd(ed); }
+  }, 120);
+};
 document.getElementById('appunti-close').onclick = () => { document.getElementById('appunti-overlay').classList.remove('show'); setNav('agenda'); };
 document.getElementById('appunti-overlay').onclick = e => { if (e.target === e.currentTarget) { e.currentTarget.classList.remove('show'); setNav('agenda'); } };
 document.getElementById('save-note-btn').onclick = function() {
