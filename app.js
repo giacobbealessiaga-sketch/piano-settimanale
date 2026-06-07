@@ -218,8 +218,15 @@ function makeCard(d, today) {
     }, 400);
   });
   editor.addEventListener('focus', function() {
-    activeEditor = this; isEditing = true; card.classList.add('active');
+    activeEditor = this; isEditing = true;
+    card.classList.add('active');
     showToolbar('main'); updateToolbarState();
+    // Prevent browser from scrolling the page when card expands
+    const nb = document.getElementById('notebook');
+    if (nb) {
+      const scrollTop = nb.scrollTop;
+      requestAnimationFrame(() => { nb.scrollTop = scrollTop; });
+    }
   });
   editor.addEventListener('blur', function() {
     setTimeout(() => {
