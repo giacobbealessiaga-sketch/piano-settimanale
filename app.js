@@ -219,17 +219,18 @@ function makeCard(d, today) {
   });
   editor.addEventListener('focus', function() {
     activeEditor = this; isEditing = true;
-    // Lock notebook scroll position before card expands
     const nb = document.getElementById('notebook');
-    const savedScroll = nb ? nb.scrollTop : 0;
     card.classList.add('active');
     showToolbar('main'); updateToolbarState();
-    // Restore scroll immediately and on next frame
     if (nb) {
-      nb.scrollTop = savedScroll;
       requestAnimationFrame(() => {
-        nb.scrollTop = savedScroll;
-        setTimeout(() => { nb.scrollTop = savedScroll; }, 50);
+        const cardTop = card.offsetTop;
+        if (cardTop < nb.scrollTop) {
+          nb.scrollTop = cardTop;
+        }
+        setTimeout(() => {
+          if (card.offsetTop < nb.scrollTop) nb.scrollTop = card.offsetTop;
+        }, 80);
       });
     }
   });
