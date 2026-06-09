@@ -272,5 +272,19 @@ document.getElementById('menu-close').addEventListener('click', () => {
 document.getElementById('menu-overlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) { e.currentTarget.classList.remove('show'); setNav('agenda'); }
 });
+
+function setNav(w) { ['agenda','oggi','menu'].forEach(n => { const el = document.getElementById('nav-' + n); if(el) el.classList.toggle('active', n === w); }); }
+
+document.getElementById('nav-agenda').addEventListener('click', () => { setNav('agenda'); });
+document.getElementById('nav-oggi').addEventListener('click', () => { setNav('agenda'); weekOffset = 0; renderWeek(); });
+document.getElementById('nav-prev').addEventListener('click', () => { weekOffset--; renderWeek(); });
+document.getElementById('nav-next').addEventListener('click', () => { weekOffset++; renderWeek(); });
+
+// Evita che il mousedown su un bottone della barra tolga il focus alla cella in
+// editing: senza questo il primo click verrebbe "consumato" dal blur dell'editor.
+document.querySelectorAll('.bottom-nav button').forEach(btn => {
+  btn.addEventListener('mousedown', e => e.preventDefault());
+});
+
 wireDayViewEvents();
 renderWeek();
