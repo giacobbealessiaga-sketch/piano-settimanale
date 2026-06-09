@@ -69,11 +69,6 @@ function wireDayViewEvents() {
     renderDayView(); setTimeout(() => document.getElementById('dv-editor').focus(), 50);
   });
   document.getElementById('dv-nav-oggi').addEventListener('click', () => openDay(new Date()));
-  document.getElementById('dv-nav-appunti').addEventListener('click', () => {
-    closeDay();
-    document.getElementById('notes-area').value = localStorage.getItem('ps_notes') || '';
-    document.getElementById('appunti-overlay').classList.add('show');
-  });
   const dvMenu = document.getElementById('dv-nav-menu');
   if (dvMenu) dvMenu.addEventListener('click', () => {
     closeDay();
@@ -230,8 +225,7 @@ document.getElementById('btn-export').addEventListener('click', () => {
   const payload = {
     version: 1,
     exported: new Date().toISOString(),
-    agenda: JSON.parse(localStorage.getItem('ps_v8') || '{}'),
-    notes: localStorage.getItem('ps_notes') || ''
+    agenda: JSON.parse(localStorage.getItem('ps_v8') || '{}')
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -255,7 +249,6 @@ document.getElementById('file-input').addEventListener('change', function() {
       if (!data.version || !data.agenda) { alert('File non valido.'); return; }
       if (!confirm('Importare i dati? I dati attuali verranno sostituiti.')) return;
       localStorage.setItem('ps_v8', JSON.stringify(data.agenda));
-      if (data.notes) localStorage.setItem('ps_notes', data.notes);
       db = data.agenda;
       renderWeek();
       document.getElementById('menu-overlay').classList.remove('show');

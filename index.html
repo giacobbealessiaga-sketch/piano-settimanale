@@ -85,7 +85,6 @@
     .panel-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .panel-hdr h3 { font-size: 15px; font-weight: 500; color: var(--text-primary); }
     .close-btn { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text-secondary); line-height: 1; }
-    .notes-area { width: 100%; min-height: 180px; padding: 10px; border-radius: var(--radius-md); border: 0.5px solid var(--border-med); background: var(--bg-secondary); font-size: 14px; color: var(--text-primary); font-family: inherit; resize: none; line-height: 1.6; }
     .save-btn { margin-top: 8px; width: 100%; padding: 10px; background: var(--red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; font-family: inherit; }
     .section-title { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.04em; }
     .io-row { display: flex; gap: 8px; }
@@ -194,8 +193,7 @@
   </div>
   <div class="bottom-nav" id="bottom-nav">
     <button class="nav-btn active" id="nav-agenda"><i class="ti ti-notebook"></i>Agenda</button>
-    <button class="nav-btn" id="nav-appunti"><i class="ti ti-notes"></i>Appunti</button>
-    <button class="nav-btn" id="nav-oggi" style="color:#1e8449;"><i class="ti ti-home"></i>Oggi</button>
+    <button class="nav-btn" id="nav-oggi" style="color:#1e8449;"><i class="ti ti-home-filled"></i>Oggi</button>
     <button class="nav-btn" id="nav-menu"><i class="ti ti-settings"></i>Menu</button>
   </div>
 </div>
@@ -243,16 +241,8 @@
   </div>
   <div class="bottom-nav">
     <button class="nav-btn active"><i class="ti ti-notebook"></i>Agenda</button>
-    <button class="nav-btn" id="dv-nav-appunti"><i class="ti ti-notes"></i>Appunti</button>
-    <button class="nav-btn" id="dv-nav-oggi"><i class="ti ti-calendar-event"></i>Oggi</button>
+    <button class="nav-btn" id="dv-nav-oggi" style="color:#1e8449;"><i class="ti ti-home-filled"></i>Oggi</button>
     <button class="nav-btn" id="dv-nav-menu"><i class="ti ti-settings"></i>Menu</button>
-  </div>
-</div>
-<div class="overlay" id="appunti-overlay">
-  <div class="panel">
-    <div class="panel-hdr"><h3>Appunti</h3><button class="close-btn" id="appunti-close" aria-label="Chiudi">&#x2715;</button></div>
-    <textarea class="notes-area" id="notes-area" placeholder="Scrivi i tuoi appunti qui..."></textarea>
-    <button class="save-btn" id="save-note-btn">Salva appunti</button>
   </div>
 </div>
 
