@@ -368,5 +368,39 @@ document.addEventListener('click', e => {
   }
 });
 
+// ── SALVATAGGIO + RESET FOCUS SU USCITA/RIENTRO ──────────────────
+function saveActiveNow() {
+  const writeKey = (key, html) => {
+    if (!key) return;
+    if (html && html !== '<br>' && html.trim() !== '') db[key] = html; else delete db[key];
+    save();
+  };
+  if (activeEditor) {
+    writeKey(activeEditor.dataset.key || (dvDate ? dayKey(dvDate) : null), activeEditor.innerHTML);
+  } else if (dvDate) {
+    const dvEd = document.getElementById('dv-editor');
+    if (dvEd) writeKey(dayKey(dvDate), dvEd.innerHTML);
+  }
+}
+// Toglie qualunque focus di editing e riporta alla pagina d'atterraggio (agenda),
+// così rientrando non si resta bloccati su un giorno col focus ma senza tastiera.
+function resetToLanding() {
+  const ae = document.activeElement;
+  if (ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) ae.blur();
+  activeEditor = null; isEditing = false;
+  hideToolbar('main'); hideToolbar('dv');
+  const cm = document.getElementById('color-menu'); if (cm) cm.classList.remove('show');
+  const dvcm = document.getElementById('dv-color-menu'); if (dvcm) dvcm.classList.remove('show');
+  const dayView = document.getElementById('day-view');
+  if (dayView && dayView.classList.contains('open')) closeDay();
+  setNav('agenda');
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { saveActiveNow(); resetToLanding(); }
+  else if (document.visibilityState === 'visible') { resetToLanding(); }
+});
+window.addEventListener('pagehide', saveActiveNow);
+window.addEventListener('pageshow', resetToLanding);
+
 wireDayViewEvents();
 renderWeek();
