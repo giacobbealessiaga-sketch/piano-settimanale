@@ -118,6 +118,39 @@ function updateDvToolbarState() {
 let activeEditor = null, savedRange = null, currentColor = '#1a1a1a';
 let isEditing = false;
 
+function placeCaretAtEnd(el) {
+  const range = document.createRange(); range.selectNodeContents(el); range.collapse(false);
+  const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+}
+function updateToolbarState() {
+  if (!activeEditor) return; saveRange();
+  const map = {bold:'tb-bold',italic:'tb-italic',underline:'tb-under',strikeThrough:'tb-strike',insertUnorderedList:'tb-ul'};
+  Object.entries(map).forEach(([cmd,id]) => { const el=document.getElementById(id); if(el) el.classList.toggle('on', document.queryCommandState(cmd)); });
+}
+function saveRange() { const s = window.getSelection(); if (s && s.rangeCount > 0) savedRange = s.getRangeAt(0).cloneRange(); }
+function restoreRange() { if (!savedRange || !activeEditor) return; try { const s = window.getSelection(); s.removeAllRanges(); s.addRange(savedRange); } catch(e) {} }
+function fmt(cmd, val) {
+  if (!activeEditor) return;
+  activeEditor.focus();
+  const sel = window.getSelection();
+  const hasSelection = sel && !sel.isCollapsed && activeEditor.contains(sel.anchorNode);
+  if (!hasSelection) restoreRange();
+  document.execCommand(cmd, false, val || null);
+  saveRange();
+  activeEditor === document.getElementById('dv-editor') ? updateDvToolbarState() : updateToolbarState();
+  activeEditor.dispatchEvent(new Event('input'));
+}
+function toggleBullet() {
+  if (!activeEditor) return;
+  activeEditor.focus(); restoreRange();
+  const was = document.queryCommandState('insertUnorderedList');
+  document.execCommand('insertUnorderedList', false, null);
+  if (was) activeEditor.normalize();
+  saveRange();
+  activeEditor === document.getElementById('dv-editor') ? updateDvToolbarState() : updateToolbarState();
+  activeEditor.dispatchEvent(new Event('input'));
+}
+
 function getMonday(offset) {
   const t = new Date(); t.setHours(0,0,0,0);
   const dow = t.getDay(), diff = dow === 0 ? -6 : 1 - dow;
@@ -196,6 +229,7 @@ function makeCard(d, today) {
   const hdr = document.createElement('div');
   hdr.className = 'day-hdr' + (isToday ? ' today' : '');
   hdr.innerHTML = '<span class="dow">' + DAYS[d.getDay()] + '</span><span class="num">' + d.getDate() + '</span><span class="mon-lbl">' + MONTHS[d.getMonth()] + '</span>';
+  hdr.addEventListener('click', () => openDay(d));
   const body = document.createElement('div'); body.className = 'day-body';
   const lines = document.createElement('div'); lines.className = 'day-lines';
   const editor = document.createElement('div');
@@ -217,7 +251,22 @@ function makeCard(d, today) {
     // No expansion — keep layout stable to prevent iOS scroll jump
     showToolbar('main'); updateToolbarState();
   });
-  navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+  editor.addEventListener('blur', function() {
+    setTimeout(() => {
+      const tb = document.getElementById('toolbar');
+      if (tb && !tb.contains(document.activeElement) && document.activeElement !== this) {
+        if (activeEditor === this) { activeEditor = null; isEditing = false; hideToolbar('main'); }
+      }
+    }, 150);
+  });
+  editor.addEventListener('keyup', updateToolbarState);
+  editor.addEventListener('mouseup', updateToolbarState);
+  body.addEventListener('touchmove', e => { if (isEditing) e.stopPropagation(); }, { passive: true });
+  body.addEventListener('click', e => { if (e.target === body || e.target === lines) { editor.focus(); placeCaretAtEnd(editor); } });
+
+  body.appendChild(lines); body.appendChild(editor);
+  card.appendChild(hdr); card.appendChild(body);
+  return card;
 }
 
 // ── EXPORT / IMPORT ──────────────────────────────────────────────
@@ -284,6 +333,39 @@ document.getElementById('nav-next').addEventListener('click', () => { weekOffset
 // editing: senza questo il primo click verrebbe "consumato" dal blur dell'editor.
 document.querySelectorAll('.bottom-nav button').forEach(btn => {
   btn.addEventListener('mousedown', e => e.preventDefault());
+});
+
+// ── TOOLBAR PRINCIPALE ───────────────────────────────────────────
+function tbBind(id, fn) {
+  const el = document.getElementById(id); if (!el) return;
+  el.addEventListener('mousedown', e => { e.preventDefault(); fn(); });
+  el.addEventListener('touchend', e => { e.preventDefault(); fn(); });
+}
+tbBind('tb-bold', () => fmt('bold'));
+tbBind('tb-italic', () => fmt('italic'));
+tbBind('tb-under', () => fmt('underline'));
+tbBind('tb-strike', () => fmt('strikeThrough'));
+tbBind('tb-ul', toggleBullet);
+
+document.getElementById('cur-color').addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); document.getElementById('color-menu').classList.toggle('show'); });
+document.querySelectorAll('#color-menu .cm-dot').forEach(dot => {
+  const apply = function(e) {
+    e.preventDefault(); e.stopPropagation();
+    currentColor = this.dataset.color;
+    document.getElementById('cur-color').style.background = currentColor;
+    document.querySelectorAll('#color-menu .cm-dot').forEach(d => d.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('color-menu').classList.remove('show');
+    fmt('foreColor', currentColor);
+  };
+  dot.addEventListener('mousedown', apply); dot.addEventListener('touchend', apply);
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('.color-picker-wrap')) {
+    document.getElementById('color-menu').classList.remove('show');
+    const dvcm = document.getElementById('dv-color-menu');
+    if (dvcm) dvcm.classList.remove('show');
+  }
 });
 
 wireDayViewEvents();
