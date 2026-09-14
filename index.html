@@ -1,286 +1,682 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>AgendaBb</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
-  <style>
-    /* Casetta piena (verde) per il tasto Oggi: SVG inline (viewBox simmetrico) per
-       un centraggio affidabile, indipendente dalle metriche del webfont. */
-    .nav-btn .nav-home { width:22px; height:22px; display:block; margin:0 auto; }
-  </style>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#e8f0e2" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="AgendaBb" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; background: #f7f3e8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
-    :root {
-      --bg-primary: #ffffff; --bg-secondary: #f5f5f0; --bg-tertiary: #f7f3e8;
-      --text-primary: #1a1a1a; --text-secondary: #666660; --text-tertiary: #aaa;
-      --border: rgba(0,0,0,0.12); --border-med: rgba(0,0,0,0.22);
-      --red: #c0392b; --red-dark: #a93226; --radius-md: 8px; --radius-lg: 12px;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-primary: #1e1e1e; --bg-secondary: #2a2a2a; --bg-tertiary: #141414;
-        --text-primary: #f0f0f0; --text-secondary: #aaa; --text-tertiary: #666;
-        --border: rgba(255,255,255,0.1); --border-med: rgba(255,255,255,0.2);
-      }
-      body { background: var(--bg-tertiary); }
-      .header { background: #1a2a1a !important; }
-      .ring { border-color: #888 !important; }
-    }
-    .app { max-width: 430px; margin: 0 auto; background: var(--bg-tertiary); height: 100dvh; display: flex; flex-direction: column; }
-    .header { display: flex; align-items: center; padding: 8px 10px; background: #e8f0e2; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
-    .hdr-pill { background: var(--bg-primary); border-radius: var(--radius-md); border: 0.5px solid var(--border); padding: 4px 10px; font-size: 13px; display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; }
-    .hdr-pill:hover { background: var(--bg-secondary); }
-    .hdr-pill strong { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-    .hdr-pill span { font-size: 11px; color: var(--text-secondary); }
-    .notebook { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
-    .page { display: grid; grid-template-columns: 1fr 18px 1fr; flex: 1; min-height: 0; }
-    .spiral-col { display: flex; flex-direction: column; align-items: center; padding: 4px 0; pointer-events: none; }
-    .ring { width: 13px; height: 9px; border: 2.5px solid #555; border-radius: 50% 50% 0 0 / 60% 60% 0 0; margin: 1.5px 0; }
-    .left-col, .right-col { display: flex; flex-direction: column; padding: 4px; gap: 5px; min-height: 0; }
-    .right-col { padding-left: 0; }
-    .day-card { background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; flex: 1 1 0; min-height: 50px; transition: flex 0.2s ease; }
-    .day-card.active { /* no expansion */ }
-    .weekend-wrap { display: flex; flex-direction: column; flex: 1; gap: 5px; min-height: 0; }
-    .weekend-wrap .day-card { flex: 1; }
-    
-    
-    
-    
-    
-    
-    .day-body { flex: 1; overflow-y: auto; position: relative; cursor: text; min-height: 0; }
-    .day-lines { position: absolute; left: 0; right: 0; top: 0; height: max(100%, 300px); background: repeating-linear-gradient(to bottom, transparent, transparent 18px, var(--border) 18px, var(--border) 18.5px); pointer-events: none; }
-    .day-editor { position: relative; z-index: 1; min-height: 100%; padding: 3px 6px 3px 8px; font-size: 13px; line-height: 22px; color: var(--text-primary); font-family: inherit; word-break: break-word; outline: none; cursor: text; caret-color: var(--red); }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<title>Ricettario</title>
+
+<link rel="manifest" href="manifest.json" />
+<!-- Nessun theme-color, né qui né nel manifest: su iOS in standalone è proprio
+     quello a disegnare la banda opaca dietro l'orologio, e resterebbe del colore
+     letto all'installazione (verde) anche nella vista Dolci. -->
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<!-- black-translucent + viewport-fit=cover: la pagina si estende sotto la barra
+     di stato e sotto la barra home, senza bande fisse sopra e sotto. Il colore
+     del tema in standalone lo decide iOS all'installazione, quindi con "default"
+     la banda restava verde anche nella vista Dolci. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Ricettario" />
+<link rel="apple-touch-icon" href="assets/icon-192.png" />
+
+<!-- Font del rendering: Anton (titoli) + Open Sauce One (testo).
+     Link separati: se uno non risponde, gli altri restano validi. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sauce+One:wght@400;600;700&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" />
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --ink:#4a3c2d;
+  --ink-soft:#6d5c48;
+  --red:#c0574e;
+  --paper:#d1dcb8;
+  --accent:#8aa33f;
+  --accent-strong:#8a9323;
+  --bg-img:url('assets/bg-salato.jpg');
+  --bg-size:820px 820px;
+  --deco-img:url('assets/deco-salato.jpg');
+  --search-img:url('assets/search-salato.jpg');
+  --field:rgba(255,255,255,0.55);
+}
+/* Il tema va messo su <html>, non solo su <body>: vedi la nota sullo sfondo
+   qui sotto. La classe viene applicata a entrambi, così i due selettori
+   restano validi anche se in futuro si tocca solo uno dei due. */
+html.dolce, body.dolce{
+  --paper:#e0c8a1;
+  --accent:#96703f;
+  --accent-strong:#b0885a;
+  --bg-img:url('assets/bg-dolce.jpg');
+  --bg-size:820px 582px;
+  --deco-img:url('assets/deco-dolce.jpg');
+  --search-img:url('assets/search-dolce.jpg');
+  --field:rgba(255,255,255,0.45);
+}
+
+/* Documento fisso: su iOS in modalità home evita rimbalzo ed elastic scroll.
+   Solo i contenitori interni scorrono. Nessuna altezza dichiarata: con
+   position:fixed e inset:0 l'altezza è esattamente quella dello schermo,
+   senza dipendere da 100vh/100dvh che in standalone risultavano più bassi. */
+html,body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none}
+/* ══ L'UNICA SUPERFICIE DI CARTA ═══════════════════════════════
+   Sta su <html>, e su nient'altro, per una ragione precisa: lo sfondo
+   dell'elemento radice è l'unico che venga propagato a TUTTA la superficie
+   del documento, anche oltre il viewport. Qualunque altro elemento, persino
+   in position:fixed, viene ritagliato dal viewport e quindi non può coprire
+   la fascia della barra home: era quella la striscia più chiara in fondo
+   (colore piatto senza grana, quindi più chiaro della carta screziata).
+   E la carta è una PIASTRELLA RIPETUTA a dimensione fissa, non `cover`: con
+   cover l'immagine viene riscalata in base all'altezza della scatola, quindi
+   la grana cambiava scala da una zona all'altra e le giunzioni si vedevano.
+   Con `repeat` a 820px la grana è identica dappertutto per costruzione, e le
+   piastrelle riempiono l'intera superficie qualunque sia l'altezza della
+   scatola. Le due immagini sono specchiate nei quattro quadranti, così i
+   bordi combaciano e non c'è cucitura (vedi tools/mkcarta.py).
+   Il bottom:-150px resta solo come rete di sicurezza; il layout non si muove,
+   perché body è ancorato a inset:0. */
+html{
+  background-color:var(--paper);
+  background-image:var(--bg-img);
+  background-repeat:repeat;
+  background-position:top left;
+  background-size:var(--bg-size);
+  bottom:-150px;
+}
+body{
+  font-family:'Open Sauce One','Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color:var(--ink);
+  font-weight:600;
+}
+
+/* Solo la fascia di verdure/frutta, senza sfondo proprio: la carta è già
+   quella di html. Compare solo sull'indice. */
+.bleed{position:fixed;left:0;right:0;top:0;bottom:0;max-width:460px;margin:0 auto;
+  z-index:0;pointer-events:none}
+.bleed::before{content:'';position:absolute;left:0;top:0;bottom:0;width:84px;
+  background:var(--deco-img) left top/cover no-repeat;opacity:0;transition:opacity .18s}
+body.su-indice .bleed::before{opacity:1}
+
+/* Ancorata a tutti e quattro i lati invece di avere un'altezza: si allunga
+   esatta quanto il body (= lo schermo) e resta centrata grazie a margin:auto
+   con max-width. Prima era height:100dvh, che in standalone su iOS risultava
+   più basso dello schermo e lasciava scoperta una striscia in fondo: l'app
+   sembrava tagliata. E nessuno sfondo qui — la carta la dipingono html e body,
+   così anche se restasse un pixel scoperto non può vedersi una giunzione. */
+.wrap{position:absolute;inset:0;max-width:460px;margin:0 auto;overflow:hidden;
+  box-shadow:0 0 40px rgba(0,0,0,.15)}
+
+h1,h2,.anton{font-family:'Anton',Impact,'Arial Narrow',sans-serif;font-weight:400;letter-spacing:.01em}
+
+/* ══ SCHERMATA LOGIN ══════════════════════════════════════════ */
+.auth{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;z-index:300}
+.auth h1{font-size:38px;line-height:1;text-align:center;color:var(--ink)}
+.auth .rule{height:5px;background:var(--ink);width:min(300px,80%);margin:8px 0 6px;border-radius:2px}
+.auth .sub{font-size:12px;color:var(--ink-soft);margin-bottom:26px;text-transform:uppercase;letter-spacing:.1em}
+.auth-card{width:100%;max-width:330px;background:rgba(255,255,255,.62);border:2px solid var(--accent-strong);
+  border-radius:14px;padding:20px;backdrop-filter:blur(2px)}
+.auth-tabs{display:flex;margin-bottom:16px;border-bottom:2px solid rgba(74,60,45,.2)}
+.auth-tab{flex:1;padding:8px;background:none;border:none;font:inherit;font-size:13px;color:var(--ink-soft);
+  cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.auth-tab.on{color:var(--ink);border-bottom-color:var(--accent-strong)}
+.lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);margin-bottom:4px}
+.inp{width:100%;padding:10px 12px;border:1.5px solid rgba(74,60,45,.28);border-radius:9px;background:#fff;
+  font:inherit;font-size:15px;color:var(--ink);margin-bottom:12px}
+.inp:focus{outline:none;border-color:var(--accent-strong)}
+.btn-main{width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:9px;
+  font-family:'Anton',sans-serif;font-size:16px;letter-spacing:.04em;cursor:pointer}
+.btn-main:disabled{opacity:.55}
+.msg{font-size:12px;text-align:center;min-height:17px;margin-top:8px;font-weight:600}
+.msg.err{color:var(--red)}
+.msg.ok{color:#4d7a2e}
+
+/* ══ SCHERMATE ════════════════════════════════════════════════ */
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.on{display:flex}
+
+/* ── INDICE ─────────────────────────────────────────────────── */
+/* La fascia illustrata sta in .bleed, che sfora sotto il bordo: qui non serve
+   più nessun elemento. La lista occupa tutta l'altezza e i comandi ci
+   galleggiano sopra, così non c'è nessuna striscia che mangia la pagina.
+   Lo spazio in basso è il minimo perché l'ultima riga non resti coperta dai
+   pulsanti, più la zona della barra home dove non va messo testo. */
+.idx-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  position:relative;z-index:2;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(46px + env(safe-area-inset-bottom)) 96px}
+
+.big-title{font-size:clamp(28px,9vw,40px);line-height:1;text-align:center;color:var(--ink)}
+.title-rule{height:5px;background:var(--ink);margin:7px 0 14px;border-radius:2px}
+
+.searchbar{position:relative;width:100%;aspect-ratio:674/164;background:var(--search-img) center/100% 100% no-repeat;
+  margin-bottom:18px}
+.searchbar input{position:absolute;left:3.5%;top:20%;width:73%;height:60%;border:none;background:none;
+  font:inherit;font-size:15px;color:var(--ink);padding:0 8px}
+.searchbar input:focus{outline:none}
+.searchbar input::-webkit-search-decoration,
+.searchbar input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.searchbar .clear{position:absolute;right:20.5%;top:20%;height:60%;width:26px;border:none;background:none;
+  font-size:18px;color:#8c8c8c;cursor:pointer;display:none}
+.searchbar.filled .clear{display:block}
+/* La lente è disegnata nell'immagine di sfondo: qui ci va sopra solo l'area
+   cliccabile, che porta la pagina sulla riga trovata. */
+.searchbar .go{position:absolute;right:0;top:0;width:19%;height:100%;border:none;background:none;cursor:pointer}
+.searchbar .go:active{background:rgba(0,0,0,.06);border-radius:0 8px 8px 0}
+
+.cat{margin-bottom:16px}
+.cat-name{font-family:'Anton',sans-serif;font-size:23px;color:var(--ink);margin-bottom:3px}
+/* Elenco puntato con rientro sporgente: il pallino è fuori dal flusso, così
+   una ricetta dal titolo lungo va a capo allineata sotto il proprio testo e
+   non si confonde con la riga successiva. */
+.row{font-size:14px;line-height:1.55;color:var(--ink);padding:1px 6px 1px 21px;margin-left:2px;
+  border-radius:6px;position:relative;cursor:pointer;transition:background .15s,color .15s}
+.row::before{content:'•';position:absolute;left:7px;top:1px;opacity:.5;font-size:14px;line-height:1.55}
+.row.hit::before, .row.hit-top::before{opacity:1;color:var(--red)}
+.row:active{background:rgba(255,255,255,.6)}
+.row.hit{background:rgba(255,255,255,.78);box-shadow:inset 3px 0 0 var(--red)}
+.row.hit-top{background:#fff;box-shadow:inset 3px 0 0 var(--red),0 1px 6px rgba(0,0,0,.12)}
+.row.dim{opacity:.32}
+@keyframes flash{0%,100%{box-shadow:inset 3px 0 0 var(--red),0 1px 6px rgba(0,0,0,.12)}
+  35%{box-shadow:inset 3px 0 0 var(--red),0 0 0 4px rgba(192,87,78,.35)}}
+.row.flash{animation:flash .75s ease-in-out 2}
+.cat.dim-all{opacity:.45}
+.cat-empty{font-size:12.5px;color:var(--ink-soft);opacity:.65;font-style:italic;padding-left:6px}
+.no-hit{font-size:13px;color:var(--red);padding:4px 6px}
+
+/* comandi dell'indice: galleggiano in basso, senza fondo né bordo */
+/* Più in basso: della zona della barra home ne riservo solo il 40%, così i
+   pulsanti scendono di una quindicina di pixel restando fuori dalla striscia
+   dove iOS intercetta lo swipe verso l'alto. Per portarli a filo del bordo
+   basta sostituire tutto il calc() con 4px. */
+.idx-bar{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;
+  padding:0 14px calc(4px + env(safe-area-inset-bottom) * 0.4);
+  pointer-events:none;background:none}
+.idx-bar>*{pointer-events:auto}
+.btn-new{display:flex;align-items:center;gap:6px;padding:9px 15px;border:none;border-radius:22px;
+  background:var(--ink);color:#fff;font-family:'Anton',sans-serif;font-size:14px;letter-spacing:.03em;
+  cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+.btn-new span{font-size:19px;line-height:1;margin-top:-2px}
+.link-switch{background:none;border:none;font-family:'Anton',sans-serif;font-size:15px;color:var(--ink);
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:6px 2px;
+  text-shadow:0 0 6px var(--paper),0 0 12px var(--paper)}
+.hdr-mini{position:absolute;top:0;right:0;z-index:4;display:flex;align-items:center;gap:6px;
+  padding:calc(8px + env(safe-area-inset-top)) 10px 8px}
+.dot{width:7px;height:7px;border-radius:50%;background:#a5a5a5;transition:background .3s}
+.dot.sync{background:#d4ac0d}.dot.ok{background:#4d7a2e}.dot.err{background:var(--red)}
+.icon-btn{background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink-soft);padding:2px 4px;line-height:1}
+/* Sopra le illustrazioni serve un fondo, altrimenti la scritta si perde
+   fra verdura e frutta. */
+.hdr-left{position:absolute;left:0;top:0;z-index:4;
+  padding:calc(8px + env(safe-area-inset-top)) 8px 8px 10px}
+.icon-btn.pdf{font-family:'Anton',sans-serif;font-size:11px;letter-spacing:.06em;
+  color:var(--ink);border:1.4px solid var(--ink);border-radius:7px;padding:3px 6px;
+  background:var(--paper);
+  background:color-mix(in srgb,var(--paper) 86%,transparent);
+  backdrop-filter:blur(3px);box-shadow:0 1px 4px rgba(0,0,0,.14)}
+
+/* ══ RICETTARIO STAMPABILE ════════════════════════════════════
+   Non un file generato da una libreria: la pagina viene composta qui e si
+   usa la stampa del sistema, da cui su iPhone si fa "Salva su File" in PDF.
+   Fuori dalla stampa questo blocco non esiste. */
+.stampa{display:none}
+@media print{
+  /* html e body sono position:fixed con overflow:hidden per l'app: in stampa
+     va sciolto, altrimenti esce solo la prima pagina. */
+  html,body{position:static;inset:auto;height:auto;overflow:visible;background:#fff}
+  /* L'app non si stampa mai: tutto quello che finisce sulla carta viene
+     composto dentro #stampa, sia il ricettario completo sia la singola
+     ricetta. Un contenuto per volta, quindi non possono sovrapporsi. */
+  .wrap,.toast,.bleed{display:none!important}
+  .stampa{display:block;color:#231c14;font-size:10.5pt;line-height:1.45}
+  @page{margin:14mm 13mm}
+
+  .st-cop{text-align:center;margin-bottom:12mm}
+  .st-cop h1{font-family:'Anton',sans-serif;font-weight:400;font-size:30pt;letter-spacing:.02em}
+  .st-cop .rig{height:2.4pt;background:#231c14;margin:3mm auto 2mm;width:60%}
+  .st-cop .dt{font-size:8.5pt;color:#6d5c48;text-transform:uppercase;letter-spacing:.1em}
+
+  .st-sez{font-family:'Anton',sans-serif;font-weight:400;font-size:19pt;
+    border-bottom:2pt solid #231c14;padding-bottom:1mm;margin:0 0 5mm;
+    break-before:page}
+  .st-sez:first-of-type{break-before:auto}
+  .st-cat{font-family:'Anton',sans-serif;font-weight:400;font-size:13pt;color:#6d5c48;
+    margin:6mm 0 2mm;break-after:avoid}
+
+  .st-ric{break-inside:avoid;margin:0 0 6mm;padding-bottom:3mm;
+    border-bottom:.4pt solid #cfc6b6}
+  .st-ric h4{font-family:'Anton',sans-serif;font-weight:400;font-size:14pt;margin-bottom:1mm}
+  .st-meta{font-size:8.5pt;color:#6d5c48;margin-bottom:1.5mm}
+  .st-meta b{color:#231c14}
+  .st-link{font-size:8pt;color:#6d5c48;word-break:break-all;margin-bottom:2mm}
+  .st-ric h5{font-size:9pt;text-transform:uppercase;letter-spacing:.07em;
+    margin:2.5mm 0 1mm;color:#6d5c48;break-after:avoid}
+  .st-ric ul,.st-ric ol{margin:0 0 0 6mm;padding:0}
+  .st-ric li{margin-bottom:.6mm}
+  .st-ric .st-note{font-size:9.5pt;font-style:italic;white-space:pre-wrap}
+  .st-due{display:flex;gap:6mm;align-items:flex-start}
+  .st-due>*{flex:1}
+  .st-vuoto{font-size:9pt;color:#8a8071;font-style:italic}
+
+  /* ══ UNA SOLA RICETTA ════════════════════════════════════════
+     Non è la schermata dell'app stampata così com'è: quella è disegnata per
+     375 px, e impilando ingredienti e procedimento in un'unica colonna
+     stretta come un telefono la misura cresce solo in altezza, senza mai
+     recuperare nulla in larghezza — bastava un millimetro in più del foglio
+     per finire su una seconda pagina (misurato: 270mm di contenuto contro
+     269 disponibili). La scheda ora usa tutta la larghezza stampabile, e
+     ingredienti e procedimento stanno AFFIANCATI in due colonne — come nel
+     ricettario completo qui sopra — così l'altezza è quella della colonna
+     più alta, non la somma delle due.
+     Le icone e le cifre restano <img> già colorati (p-*.png, vedi
+     tools/mkstampa.py) e non maschere CSS: Safari non applica le maschere in
+     stampa, e restava il solo colore di fondo a riempire il rettangolo. */
+  /* Larghezza pari alla zona stampabile di A4 (210mm - 13mm di margine per
+     lato, dal @page qui sopra): senza un valore esplicito, in un browser
+     normale l'elemento si allarga fino al bordo della pagina reale — questo
+     è quello che vogliamo — ma nelle prove a schermo (media print forzata
+     senza una vera pagina A4) si allargherebbe fino al bordo della finestra,
+     falsando ogni misura di altezza fatta così. Se cambi i margini del
+     @page, aggiorna anche questo valore. */
+  .stampa.singola{
+    width:184mm;margin:0 auto;
+    padding:5mm 6mm 6mm;
+    color:var(--ink);font-size:9.3pt;line-height:1.4;
+    background-color:var(--paper);
+    background-image:var(--bg-img);
+    background-repeat:repeat;
+    background-size:var(--bg-size);
+  }
+  /* Il selettore deve includere l'elemento stesso, non solo i discendenti:
+     con il solo `*` la carta non veniva mai stampata, perché `*` non
+     corrisponde all'elemento su cui sta il fondo. */
+  .stampa.singola,.stampa.singola *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  .sr-tit{font-family:'Anton',sans-serif;font-weight:400;font-size:19pt;
+    line-height:1.06;margin:0 0 1.2mm}
+  .sr-rig{height:1.2mm;background:var(--ink);border-radius:.5mm;margin:0 0 1.8mm}
+  .sr-meta1{font-size:8.6pt;margin:0 0 2.5mm}
+  /* nome dedicato: un semplice ".cat" collideva con l'omonima classe usata
+     per i blocchi di categoria dell'indice, ereditandone lo stile */
+  .sr-meta1 .sr-catlbl{text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)}
+  .sr-meta1 b{font-family:'Anton',sans-serif;font-weight:400;font-size:9.6pt;
+    margin:0 1.5mm 0 3mm}
+
+  .sr-tempi{display:flex;gap:2.2mm;margin:0 0 2.8mm}
+  .sr-tempo{flex:1;text-align:center}
+  .sr-tempo .et{font-family:'Anton',sans-serif;font-weight:400;font-size:7.4pt;
+    line-height:1.05;margin-bottom:.6mm}
+  .sr-tempo .ov{border:.4mm solid var(--ink);border-radius:50%;padding:.9mm 0;
+    font-size:8.8pt;background:var(--field)}
+
+  .sr-tools{display:flex;gap:2mm;margin:0 0 3mm;align-items:flex-start}
+  .sr-tool{flex:1;text-align:center}
+  .sr-tool img{height:8mm;width:auto;max-width:100%}
+  .sr-tool .nota{font-size:6.2pt;line-height:1.2;margin-top:.6mm;
+    border-top:.3mm solid var(--ink);padding-top:.6mm;color:var(--ink)}
+  .sr-tool.spento img{opacity:.5}
+
+  .sr-sez{font-family:'Anton',sans-serif;font-weight:400;font-size:11pt;
+    color:var(--accent);margin:0 0 1.2mm;break-after:avoid}
+
+  /* Ingredienti e Procedimento fianco a fianco: è questo il cambio che fa
+     stare tutto in una pagina, non le rifiniture di spaziatura. */
+  .sr-due{display:flex;gap:6mm;align-items:flex-start;margin:0 0 3mm}
+  .sr-col-ingr{flex:0 0 32%}
+  .sr-col-proc{flex:1;min-width:0}
+
+  .sr-ingr{margin:0 0 0 4mm;padding:0}
+  .sr-ingr li{margin-bottom:.3mm}
+
+  .sr-passo{display:flex;gap:2mm;align-items:flex-start;margin-bottom:1.6mm;
+    break-inside:avoid}
+  .sr-passo img{height:8.5mm;width:auto;flex-shrink:0}
+  .sr-passo .txt{flex:1;border-bottom:.3mm solid rgba(74,60,45,.35);
+    padding-bottom:.7mm;white-space:pre-wrap}
+
+  .sr-strum{display:flex;flex-wrap:wrap;gap:2mm 3mm;margin:0 0 3mm}
+  .sr-strum .voce{width:16mm;text-align:center}
+  .sr-strum img{height:7mm;width:auto}
+  .sr-strum .et{font-size:5.8pt;line-height:1.15;color:var(--red);margin-top:.4mm}
+
+  .sr-note{font-size:8.6pt;line-height:1.35;white-space:pre-wrap;
+    background:var(--field);border:.3mm solid rgba(74,60,45,.25);
+    border-radius:2mm;padding:2mm 2.5mm;margin:0 0 2.8mm}
+  .sr-link{font-size:7.6pt;margin:0 0 2mm;word-break:break-all}
+  .sr-link a{color:var(--accent-strong);font-weight:700}
+  .sr-firma{font-size:7.6pt;color:var(--ink-soft);letter-spacing:.03em;
+    border-top:.3mm solid rgba(74,60,45,.25);padding-top:1.5mm}
+  .sr-vuoto{font-size:8.6pt;color:var(--ink-soft);font-style:italic;margin:0 0 4mm}
+}
+
+/* ── DETTAGLIO RICETTA ──────────────────────────────────────── */
+/* comandi della ricetta: galleggiano sopra la pagina, niente striscia fissa */
+/* sfumatura, non striscia: nessun bordo, a pagina ferma è carta su carta e non
+   si vede; serve solo a non far passare il testo illeggibile sotto i comandi */
+.rec-top{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;
+  padding:calc(8px + env(safe-area-inset-top)) 12px 10px;
+  background:linear-gradient(to bottom,var(--paper) 62%,transparent);
+  pointer-events:none}
+.rec-top>*{pointer-events:auto}
+.btn-back{display:flex;align-items:center;gap:5px;background:none;border:none;font:inherit;font-size:12.5px;
+  color:var(--ink);cursor:pointer;text-transform:uppercase;letter-spacing:.05em;padding:4px 2px;
+  text-shadow:0 0 6px var(--paper),0 0 12px var(--paper)}
+.btn-back b{font-size:17px;line-height:1}
+.rec-actions{display:flex;gap:7px}
+/* fondo semitrasparente color carta: restano leggibili anche sopra il testo */
+.pill{padding:6px 13px;border-radius:18px;border:1.8px solid var(--ink);color:var(--ink);
+  background:var(--paper);                                   /* fallback Safari < 16.2 */
+  background:color-mix(in srgb,var(--paper) 82%,transparent);backdrop-filter:blur(3px);
+  font-family:'Anton',sans-serif;font-size:12.5px;letter-spacing:.04em;cursor:pointer}
+.pill.solid{background:var(--ink);color:#fff}
+.pill.danger{border-color:var(--red);color:var(--red)}
+.pill:disabled{opacity:.5}
+
+.rec-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  padding:calc(40px + env(safe-area-inset-top)) 18px calc(44px + env(safe-area-inset-bottom))}
+/* "sfogliare": la pagina entra scorrendo dal lato da cui arriva */
+@keyframes pg-in-l{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+@keyframes pg-in-r{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+.rec-scroll.pg-l{animation:pg-in-l .22s ease-out}
+.rec-scroll.pg-r{animation:pg-in-r .22s ease-out}
 
 
+.rec-title{font-family:'Anton',sans-serif;font-size:clamp(26px,8vw,36px);line-height:1.05;color:var(--ink);
+  width:100%;border:none;background:none;padding:0;display:block;word-break:break-word}
+textarea.rec-title{resize:none;overflow:hidden}
+.rec-title:focus{outline:none}
+.rec-title::placeholder{color:rgba(74,60,45,.32)}
+.rec-rule{height:5px;background:var(--ink);margin:5px 0 12px;border-radius:2px}
 
-    .day-editor ul { margin: 0; padding-left: 16px; list-style: disc; }
-    .day-editor ul li { line-height: 22px; padding: 0; margin: 0; }
-    .toolbar { display: none; flex-shrink: 0; background: var(--bg-primary); border-top: 0.5px solid var(--border-med); padding: 5px 8px; gap: 3px; flex-wrap: wrap; align-items: center; width: 100%; z-index: 999; }
-    .toolbar.show { display: flex; }
-    .toolbar.floating { position: fixed; left: 0; right: 0; max-width: 430px; margin: 0 auto; }
-    .tb-sep { width: 0.5px; height: 20px; background: var(--border-med); margin: 0 3px; }
-    .tb-btn { width: 32px; height: 30px; border: none; background: none; cursor: pointer; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--text-primary); flex-shrink: 0; font-family: inherit; }
-    .tb-btn:hover { background: var(--bg-secondary); }
-    .tb-btn.on { background: var(--red); color: #fff; }
-    .color-picker-wrap { position: relative; }
-    .color-dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border-med); cursor: pointer; flex-shrink: 0; }
-    .color-menu { display: none; position: absolute; bottom: 36px; left: 0; background: var(--bg-primary); border: 0.5px solid var(--border-med); border-radius: var(--radius-md); padding: 8px; gap: 6px; flex-wrap: wrap; width: 140px; z-index: 1000; }
-    .color-menu.show { display: flex; }
-    .cm-dot { width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 1.5px solid transparent; flex-shrink: 0; }
-    .cm-dot:hover { border-color: var(--border-med); }
-    .cm-dot.active { border-color: var(--red); border-width: 2.5px; }
-    .bottom-nav { display: flex; background: var(--bg-primary); border-top: 0.5px solid var(--border-med); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
-    .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 7px 0; gap: 2px; border: none; background: none; cursor: pointer; color: var(--text-secondary); font-size: 10px; font-family: inherit; }
-    .nav-btn i { font-size: 22px; display:block; width:100%; text-align:center; line-height:1; }
-    .nav-btn.active { color: var(--red); }
-    .nav-arrow { flex:0 0 auto; width:34px; align-self:stretch; border:none; background:none; cursor:pointer; color:var(--text-secondary); opacity:0.28; font-size:26px; line-height:1; display:flex; align-items:center; justify-content:center; transition:opacity .15s; }
-    .nav-arrow:hover { opacity:0.6; }
-    .nav-arrow:active { opacity:0.85; }
-    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: flex-end; }
-    .overlay.show { display: flex; }
-    .panel { background: var(--bg-primary); width: 100%; border-radius: 16px 16px 0 0; padding: 16px; max-height: 85vh; overflow-y: auto; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-    .panel-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .panel-hdr h3 { font-size: 15px; font-weight: 500; color: var(--text-primary); }
-    .close-btn { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text-secondary); line-height: 1; }
-    .save-btn { margin-top: 8px; width: 100%; padding: 10px; background: var(--red); color: #fff; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; font-family: inherit; }
-    .section-title { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.04em; }
-    .io-row { display: flex; gap: 8px; }
-    .io-btn { flex: 1; padding: 9px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .io-btn.export { background: var(--bg-secondary); border: 0.5px solid var(--border-med); color: var(--text-primary); }
-    .io-btn.import { background: var(--bg-secondary); border: 0.5px solid var(--border-med); color: var(--text-primary); }
-    .io-btn:hover { background: var(--border); }
-    .io-note { font-size: 11px; color: var(--text-tertiary); margin-top: 6px; line-height: 1.5; }
-    .update-banner { display: none; background: #1e8449; color: #fff; font-size: 12px; padding: 7px 12px; text-align: center; cursor: pointer; flex-shrink: 0; }
-    .update-banner.show { display: block; }
-    .cal-wrap { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
-    .cal-wrap.show { display: flex; }
-    .cal-box { background: var(--bg-primary); width: 90%; max-width: 320px; border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 16px; }
-    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .cal-nav button { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text-secondary); padding: 0 6px; }
-    .cal-nav span { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-    .cgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
-    .cdh { font-size: 10px; color: var(--text-secondary); padding: 3px 0; font-weight: 500; }
-    .cd { font-size: 13px; padding: 7px 2px; border-radius: var(--radius-md); color: var(--text-primary); cursor: pointer; }
-    .cd:hover, .cd:active { background: var(--bg-secondary); }
-    .cd.cur-week { background: #f5e8e8; }
-    .cd.today-c { background: var(--red) !important; color: #fff !important; }
-    .cd.empty { cursor: default; pointer-events: none; }
-    .cal-close-btn { margin-top: 12px; width: 100%; padding: 8px; border: 0.5px solid var(--border-med); border-radius: var(--radius-md); background: none; cursor: pointer; font-size: 13px; color: var(--text-secondary); font-family: inherit; }
+/* titolo + link "Vai alla ricetta" accanto (in sola lettura) */
+.title-wrap{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+/* con titoli corti il link sta sulla stessa riga, con titoli lunghi va sotto */
+.title-wrap .rec-title{flex:0 1 auto;width:auto;min-width:0}
+.go-link{flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;gap:4px;
+  font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--accent-strong);text-decoration:none;border-bottom:2px solid var(--accent-strong);
+  padding-bottom:2px;margin-bottom:4px;white-space:nowrap}
+.go-link:active{opacity:.6}
 
-    /* DAY VIEW */
-    .day-view{display:none;position:fixed;inset:0;background:var(--bg-primary);z-index:50;flex-direction:column;max-width:430px;margin:0 auto;}
-    .day-view.open{display:flex;}
-    .dv-header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#e8f0e2;border-bottom:0.5px solid var(--border);flex-shrink:0;}
-    .dv-back{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-secondary);padding:0 2px;line-height:1;font-family:inherit;}
-    .dv-back:hover{color:var(--text-primary);}
-    .dv-title{flex:1;}
-    .dv-dow{font-size:11px;color:var(--text-secondary);font-weight:500;text-transform:uppercase;}
-    .dv-date{font-size:18px;font-weight:500;color:var(--text-primary);line-height:1.2;}
-    .dv-nav{display:flex;gap:4px;}
-    .dv-nav button{width:32px;height:32px;background:var(--bg-secondary);border:0.5px solid var(--border-med);border-radius:var(--radius-md);cursor:pointer;font-size:18px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-family:inherit;}
-    .dv-nav button:hover{background:var(--bg-primary);}
-    .dv-body{flex:1;overflow-y:auto;position:relative;min-height:0;}
-    .dv-lines{position:absolute;left:0;right:0;top:0;height:max(100%,800px);background:repeating-linear-gradient(to bottom,transparent,transparent 26px,var(--border) 26px,var(--border) 27px);pointer-events:none;}
-    .dv-editor{position:relative;z-index:1;min-height:100%;padding:6px 16px;font-size:15px;line-height:27px;color:var(--text-primary);font-family:inherit;word-break:break-word;outline:none;cursor:text;caret-color:var(--red);}
-    .dv-editor ul{margin:0;padding-left:20px;list-style:disc;}
-    .dv-editor ul li{line-height:27px;padding:0;margin:0;}
-    .day-hdr{transition:filter 0.15s;}
-    .day-hdr:hover{filter:brightness(0.93);}
-    .day-hdr:active{filter:brightness(0.87);}
-    .day-hdr.today:hover{filter:brightness(1.1);}
+/* Dosi / Persone */
+.dosi-view{font-size:13px;margin-bottom:14px}
+.dosi-view b{font-family:'Anton',sans-serif;font-weight:400;font-size:15px;margin-right:5px}
 
-    /* Day header as left sidebar */
-    .day-card { position: relative; }
-    .day-hdr { position:absolute; left:0; top:0; bottom:0; width:28px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:6px; gap:1px; cursor:pointer; border-right:0.5px solid var(--border); background:var(--bg-secondary); border-radius:var(--radius-lg) 0 0 var(--radius-lg); z-index:2; user-select:none; transition:filter 0.15s; flex-shrink:0; }
-    .day-hdr:hover { filter:brightness(0.93); }
-    .day-hdr:active { filter:brightness(0.85); }
-    .day-hdr.today { background:var(--red); }
-    .day-hdr.today .dow, .day-hdr.today .num, .day-hdr.today .mon-lbl { color:#fff; }
-    .dow { font-size:8px; color:var(--text-secondary); font-weight:600; text-transform:uppercase; writing-mode:vertical-lr; transform:rotate(180deg); letter-spacing:0.05em; }
-    .num { font-size:14px; font-weight:600; color:var(--text-primary); line-height:1; }
-    .mon-lbl { font-size:7px; color:var(--text-tertiary); writing-mode:vertical-lr; transform:rotate(180deg); }
-    .day-body { margin-left:28px; }
-    .day-editor { padding:2px 5px 2px 5px; font-size:12px; line-height:18.5px; }
-    .day-editor ul { padding-left:14px; }
-    .day-editor ul li { line-height:18.5px; }
-      </style>
+.fld-row{display:flex;align-items:baseline;gap:8px;margin-bottom:16px}
+.fld-lbl{font-family:'Anton',sans-serif;font-size:17px;color:var(--ink);flex-shrink:0}
+.line-inp{flex:1;min-width:0;border:none;border-bottom:1.8px solid var(--ink);background:none;font:inherit;
+  font-size:13.5px;color:var(--ink);padding:1px 3px 3px}
+.line-inp:focus{outline:none;border-bottom-color:var(--red)}
+.line-inp[readonly]{border-bottom-style:solid}
+.link-view{flex:1;min-width:0;border-bottom:1.8px solid var(--ink);font-size:13.5px;padding:1px 3px 3px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link-view a{color:var(--accent-strong)}
+
+/* categoria */
+.cat-pick{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.cat-pick select{flex:1;font:inherit;font-size:13.5px;color:var(--ink);background:var(--field);
+  border:1.5px solid rgba(74,60,45,.3);border-radius:8px;padding:7px 9px}
+.cat-tag{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-soft);margin-bottom:14px}
+
+/* tempi */
+.times{display:flex;gap:6px;margin-bottom:20px}
+.time-box{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.time-lbl{font-family:'Anton',sans-serif;font-size:13px;color:var(--ink);text-align:center;line-height:1.05}
+.time-oval{width:100%;height:36px;border:1.8px solid var(--ink);border-radius:50%;background:var(--field);
+  display:flex;align-items:center;justify-content:center}
+.time-oval input{width:100%;height:100%;border:none;background:none;font:inherit;font-size:14px;color:var(--ink);
+  text-align:center;border-radius:50%}
+.time-oval input:focus{outline:none;background:#fff}
+.time-oval input::placeholder{color:rgba(74,60,45,.3);font-size:12px}
+
+/* strumenti (cinque icone: gap ridotto per starci su schermi da 375px) */
+.tools{margin-bottom:22px}
+.tool-icons{display:flex;gap:5px;align-items:flex-end;justify-content:space-between;margin-bottom:6px}
+.tool{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.tool-ic{width:100%;max-width:46px;height:44px;background-color:var(--ink);cursor:pointer;
+  -webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;transition:background-color .15s}
+.tool.on .tool-ic{background-color:var(--red)}
+.tool[data-locked="1"] .tool-ic{cursor:default}
+.tool-note{width:100%;border:none;border-bottom:1.8px solid var(--ink);background:none;font:inherit;
+  font-size:11px;color:var(--ink);text-align:center;padding:2px 1px 3px;visibility:hidden}
+.tool.on .tool-note{visibility:visible}
+.tool-note.view{min-height:17px;white-space:normal;word-break:break-word;line-height:1.3;font-size:10px}
+.tool-note:focus{outline:none;border-bottom-color:var(--red)}
+.tool-note::placeholder{color:rgba(74,60,45,.35)}
+
+/* sezioni */
+.sec-title{font-family:'Anton',sans-serif;font-size:21px;color:var(--accent);margin-bottom:8px;letter-spacing:.02em}
+.ingr-area{width:100%;min-height:120px;border:1.8px solid rgba(74,60,45,.35);border-radius:10px;background:var(--field);
+  font:inherit;font-size:14px;line-height:1.65;color:var(--ink);padding:10px 12px;resize:none;overflow:hidden}
+.ingr-area:focus{outline:none;border-color:var(--red);background:#fff}
+.ingr-area::placeholder{color:rgba(74,60,45,.35);font-weight:400}
+.ingr-list{margin:0 0 4px;padding-left:20px;font-size:14px;line-height:1.7}
+.ingr-list li{margin:0}
+.empty-note{font-size:13px;color:var(--ink-soft);opacity:.7;font-style:italic}
+
+/* ══ LINK DA PROVARE ══════════════════════════════════════════ */
+/* Qui sopra c'è il pulsante "← Indice" in stile .rec-top: fluttua sopra il
+   contenuto con una sfumatura più alta di quella pensata per .idx-scroll
+   (che presume solo i due piccoli pallini di .hdr-mini). Senza questo il
+   titolo nasceva troppo in alto e finiva mezzo lavato dalla sfumatura. */
+#links-scroll{padding-top:calc(40px + env(safe-area-inset-top))}
+.lk-add{display:flex;gap:8px;margin-bottom:20px}
+.lk-add input{flex:1;min-width:0;padding:10px 12px;border:1.5px solid rgba(74,60,45,.3);
+  border-radius:9px;background:#fff;font:inherit;font-size:14px;color:var(--ink)}
+.lk-add input:focus{outline:none;border-color:var(--accent-strong)}
+.lk-add .pill{flex-shrink:0;padding:0 16px;display:flex;align-items:center;font-size:13px}
+
+.lk-row{background:var(--field);border:1.5px solid rgba(74,60,45,.22);border-radius:12px;
+  padding:10px 12px;margin-bottom:10px}
+.lk-top{display:flex;align-items:flex-start;gap:8px}
+.lk-url{flex:1;min-width:0;font-size:13.5px;line-height:1.4;color:var(--accent-strong);
+  font-weight:700;word-break:break-all}
+.lk-del{flex-shrink:0;background:none;border:none;color:var(--red);font-size:15px;
+  cursor:pointer;padding:2px 3px;line-height:1}
+
+.lk-nota-riga{display:flex;align-items:flex-start;gap:6px;margin-top:7px;
+  border-top:1px solid rgba(74,60,45,.18);padding-top:7px}
+.lk-nota-testo{flex:1;min-width:0;font-size:12.5px;line-height:1.4;color:var(--ink);
+  white-space:pre-wrap;word-break:break-word;cursor:text}
+.lk-nota-area{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:12.5px;
+  line-height:1.4;color:var(--ink);resize:none;overflow:hidden;padding:0}
+.lk-nota-area:focus{outline:none}
+.lk-nota-rm{flex-shrink:0;background:none;border:none;color:var(--ink-soft);font-size:11px;
+  cursor:pointer;padding:1px 2px;white-space:nowrap}
+.lk-nota-add{margin-top:7px;background:none;border:none;border-top:1px dashed rgba(74,60,45,.3);
+  padding-top:7px;width:100%;text-align:left;font:inherit;font-size:12px;color:var(--ink-soft);
+  cursor:pointer}
+.lk-vuoto{font-size:13px;color:var(--ink-soft);opacity:.7;font-style:italic;text-align:center;
+  margin-top:30px}
+
+.steps{margin-top:6px}
+.step{display:flex;gap:11px;align-items:flex-start;margin-bottom:12px}
+/* Numeri dipinti a pennello: 1-5 sono le immagini del PDF, 6-9 e 0 sono
+   ricostruite nello stesso stile (tools/mknumeri.py). Ogni cifra è una
+   maschera alpha, quindi il colore lo dà il CSS e il rosso è un cambio di
+   background-color. Comporre le cifre permette qualsiasi numero di passi. */
+.step-num{width:42px;flex-shrink:0;height:48px;display:flex;align-items:flex-start;
+  justify-content:center;gap:1px}
+.step-num .cifra{flex:0 0 auto;width:22px;height:48px;background-color:var(--ink);opacity:.9;
+  -webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
+  transition:background-color .15s,opacity .15s}
+.step-num.due .cifra{width:19px}          /* dal passo 10 in poi */
+/* rosso solo se il passo parla di forno/frigo/freezer/pentola/padella/frullatore */
+.step-num.hot .cifra{background-color:var(--red);opacity:1}
+.step-body{flex:1;min-width:0;padding-top:6px}
+.step-area{width:100%;min-height:44px;border:none;background:none;font:inherit;font-size:13.5px;line-height:26px;
+  color:var(--ink);resize:none;overflow:hidden;padding:0 2px;
+  background-image:repeating-linear-gradient(to bottom,transparent,transparent 25px,rgba(74,60,45,.55) 25px,rgba(74,60,45,.55) 26px)}
+.step-area:focus{outline:none}
+.step-area::placeholder{color:rgba(74,60,45,.32);font-weight:400}
+.step-text{font-size:13.5px;line-height:26px;white-space:pre-wrap;word-break:break-word;padding:0 2px;
+  border-bottom:1.8px solid rgba(74,60,45,.35)}
+/* Comandi del passo: sotto il testo e non di fianco, altrimenti su 375 px
+   rubano larghezza alla riga da scrivere. Compaiono solo in modifica. */
+.step-tools{display:flex;justify-content:flex-end;gap:2px;margin-top:2px}
+.step-tools button{width:30px;height:26px;border:none;background:none;cursor:pointer;
+  border-radius:7px;font-size:15px;line-height:1;color:var(--ink-soft);
+  display:flex;align-items:center;justify-content:center}
+.step-tools button:active{background:rgba(255,255,255,.6)}
+.step-tools button:disabled{opacity:.22;cursor:default}
+.step-tools button.rosso{color:var(--red)}
+.btn-step{margin:2px 0 8px 45px;padding:6px 14px;border-radius:16px;border:1.6px dashed var(--ink);background:none;
+  font:inherit;font-size:12.5px;color:var(--ink);cursor:pointer}
+
+.rec-foot{display:flex;gap:8px;margin-top:22px}
+.rec-foot .pill{flex:1;text-align:center;padding:11px}
+
+/* STRUMENTAZIONE: griglia di icone selezionabili */
+.str-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 4px;margin-top:4px}
+.str{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+  padding:4px 1px;border-radius:9px}
+.str-view{cursor:default}
+.str:not(.str-view).on{background:rgba(255,255,255,.42)}
+.str-ic{width:36px;height:36px;background-color:var(--ink);opacity:.5;transition:background-color .15s,opacity .15s;
+  -webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.str-lbl{font-size:8.5px;line-height:1.15;text-align:center;color:var(--ink);opacity:.5;
+  letter-spacing:.01em;transition:color .15s,opacity .15s}
+.str.on .str-ic{background-color:var(--red);opacity:1}
+.str.on .str-lbl{color:var(--red);opacity:1;font-weight:700}
+.str-view .str-ic, .str-view .str-lbl{opacity:1}
+
+.note-view{font-size:13.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;
+  padding:9px 12px;border-radius:10px;background:var(--field);border:1.5px solid rgba(74,60,45,.22)}
+
+/* firma in fondo alla ricetta */
+.autore-view{margin-top:26px;padding-top:10px;border-top:1.5px solid rgba(74,60,45,.2);
+  font-size:11.5px;color:var(--ink-soft);letter-spacing:.03em}
+.autore-view b{font-weight:700;color:var(--ink)}
+
+/* frecce per sfogliare: galleggiano negli angoli in basso, senza numerazione */
+.pg-arrows{position:absolute;left:0;right:0;bottom:0;z-index:3;display:none;
+  justify-content:space-between;padding:0 6px calc(2px + env(safe-area-inset-bottom) * 0.4);
+  pointer-events:none}
+.pg-arrows.on{display:flex}
+.pg-arrow{pointer-events:auto;width:46px;height:46px;border:none;border-radius:50%;cursor:pointer;
+  background:none;color:var(--ink);font-size:30px;line-height:1;opacity:.4;
+  display:flex;align-items:center;justify-content:center;
+  text-shadow:0 0 7px var(--paper),0 0 14px var(--paper)}
+.pg-arrow:active{opacity:.9}
+.pg-arrow:disabled{opacity:.1;cursor:default}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%);
+  background:var(--ink);color:#fff;font-size:13px;padding:9px 16px;border-radius:20px;z-index:500;
+  opacity:0;pointer-events:none;transition:opacity .25s;max-width:88%;text-align:center}
+.toast.show{opacity:.96}
+.toast.err{background:var(--red)}
+</style>
 </head>
 <body>
-<div class="app">
-  <div class="update-banner" id="update-banner">
-    Aggiornamento disponibile — tocca per ricaricare
-  </div>
-  <div class="header">
-    <div class="hdr-pill" id="open-cal" role="button" aria-label="Apri calendario">
-      <i class="ti ti-calendar" aria-hidden="true"></i>
-      <strong id="hdr-month"></strong>
-      <span id="hdr-week"></span>
-      <i class="ti ti-chevron-down" style="font-size:12px;color:var(--text-tertiary);" aria-hidden="true"></i>
-    </div>
-  </div>
-  <div class="notebook" id="notebook">
-    <div class="page" id="main-page">
-      <div class="left-col" id="left-col"></div>
-      <div class="spiral-col" id="spiral-col"></div>
-      <div class="right-col" id="right-col"></div>
-    </div>
-  </div>
-  <div class="toolbar" id="toolbar">
-    <button class="tb-btn" id="tb-bold" title="Grassetto"><b>B</b></button>
-    <button class="tb-btn" id="tb-italic" title="Corsivo"><i>I</i></button>
-    <button class="tb-btn" id="tb-under" title="Sottolineato"><u>U</u></button>
-    <button class="tb-btn" id="tb-strike" title="Barrato"><s>S</s></button>
-    <div class="tb-sep"></div>
-    <div class="tb-sep"></div>
-    <button class="tb-btn" id="tb-ul" title="Elenco puntato"><i class="ti ti-list" aria-hidden="true"></i></button>
-    <div class="tb-sep"></div>
-    <div class="color-picker-wrap">
-      <div class="color-dot" id="cur-color" style="background:#1a1a1a;" title="Colore testo" role="button" aria-label="Scegli colore"></div>
-      <div class="color-menu" id="color-menu">
-        <div class="cm-dot active" data-color="#1a1a1a" style="background:#1a1a1a;"></div>
-        <div class="cm-dot" data-color="#c0392b" style="background:#c0392b;"></div>
-        <div class="cm-dot" data-color="#2471a3" style="background:#2471a3;"></div>
-        <div class="cm-dot" data-color="#1e8449" style="background:#1e8449;"></div>
-        <div class="cm-dot" data-color="#d4ac0d" style="background:#d4ac0d;"></div>
-        <div class="cm-dot" data-color="#884ea0" style="background:#884ea0;"></div>
-        <div class="cm-dot" data-color="#e67e22" style="background:#e67e22;"></div>
-        <div class="cm-dot" data-color="#aaa" style="background:#aaa;"></div>
+<div class="bleed" aria-hidden="true"></div>
+<div class="wrap">
+
+  <!-- ══ LOGIN ══════════════════════════════════════════════ -->
+  <div class="auth" id="auth">
+    <h1>RICETTARIO</h1>
+    <div class="rule"></div>
+    <div class="sub">le nostre ricette</div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab on" id="tab-login">Accedi</button>
+        <button class="auth-tab" id="tab-signup">Registrati</button>
+      </div>
+      <div id="form-login">
+        <label class="lbl">Email</label>
+        <input class="inp" type="email" id="li-email" autocomplete="email" placeholder="nome@email.com" />
+        <label class="lbl">Password</label>
+        <input class="inp" type="password" id="li-pw" autocomplete="current-password" placeholder="Password" />
+        <button class="btn-main" id="btn-login">ACCEDI</button>
+        <div class="msg err" id="li-msg"></div>
+      </div>
+      <div id="form-signup" style="display:none">
+        <label class="lbl">Email</label>
+        <input class="inp" type="email" id="su-email" autocomplete="email" placeholder="nome@email.com" />
+        <label class="lbl">Password</label>
+        <input class="inp" type="password" id="su-pw" autocomplete="new-password" placeholder="Minimo 6 caratteri" />
+        <button class="btn-main" id="btn-signup">CREA ACCOUNT</button>
+        <div class="msg err" id="su-msg"></div>
       </div>
     </div>
   </div>
-  <div class="bottom-nav" id="bottom-nav">
-    <button class="nav-arrow" id="nav-prev" aria-label="Settimana precedente">&#8249;</button>
-    <button class="nav-btn active" id="nav-agenda"><i class="ti ti-notebook"></i>Agenda</button>
-    <button class="nav-btn" id="nav-oggi" style="color:#1e8449;"><svg class="nav-home" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.707 2.293l9 9c.63 .63 .184 1.707 -.707 1.707h-1v6a3 3 0 0 1 -3 3h-1v-7a3 3 0 0 0 -2.824 -2.995l-.176 -.005h-2a3 3 0 0 0 -3 3v7h-1a3 3 0 0 1 -3 -3v-6h-1c-.89 0 -1.337 -1.077 -.707 -1.707l9 -9a1 1 0 0 1 1.414 0m.293 11.707a1 1 0 0 1 1 1v7h-4v-7a1 1 0 0 1 .883 -.993l.117 -.007z"/></svg>Oggi</button>
-    <button class="nav-btn" id="nav-menu"><i class="ti ti-settings"></i>Menu</button>
-    <button class="nav-arrow" id="nav-next" aria-label="Settimana successiva">&#8250;</button>
-  </div>
-</div>
 
-
-<!-- DAY VIEW -->
-<div class="day-view" id="day-view">
-  <div class="dv-header">
-    <button class="dv-back" id="dv-back" aria-label="Torna">&#8592;</button>
-    <div class="dv-title">
-      <div class="dv-dow" id="dv-dow"></div>
-      <div class="dv-date" id="dv-date"></div>
+  <!-- ══ INDICE ═════════════════════════════════════════════ -->
+  <div class="screen" id="scr-index">
+    <div class="hdr-mini">
+      <div class="dot" id="dot" title="Stato sincronizzazione"></div>
+      <button class="icon-btn" id="btn-logout" title="Esci" aria-label="Esci">⎋</button>
     </div>
-    <div class="dv-nav">
-      <button id="dv-prev" aria-label="Giorno precedente">&#8249;</button>
-      <button id="dv-next" aria-label="Giorno successivo">&#8250;</button>
+    <!-- Il PDF sta a sinistra, sopra la fascia illustrata: a destra si
+         sovrapponeva al titolo. -->
+    <div class="hdr-left">
+      <button class="icon-btn pdf" id="btn-stampa" title="Ricettario stampabile">PDF</button>
     </div>
-  </div>
-  <div class="dv-body" id="dv-body">
-    <div class="dv-lines"></div>
-    <div class="dv-editor" id="dv-editor" contenteditable="true" spellcheck="true"></div>
-  </div>
-  <div class="toolbar" id="toolbar-dv">
-    <button class="tb-btn" id="dv-bold" title="Grassetto"><b>B</b></button>
-    <button class="tb-btn" id="dv-italic" title="Corsivo"><i>I</i></button>
-    <button class="tb-btn" id="dv-under" title="Sottolineato"><u>U</u></button>
-    <button class="tb-btn" id="dv-strike" title="Barrato"><s>S</s></button>
-    <div class="tb-sep"></div>
-    <div class="tb-sep"></div>
-    <button class="tb-btn" id="dv-ul" title="Elenco puntato"><i class="ti ti-list" aria-hidden="true"></i></button>
-    <div class="tb-sep"></div>
-    <div class="color-picker-wrap">
-      <div class="color-dot" id="dv-cur-color" style="background:#1a1a1a;" role="button" aria-label="Colore"></div>
-      <div class="color-menu" id="dv-color-menu">
-        <div class="cm-dot active" data-color="#1a1a1a" style="background:#1a1a1a;"></div>
-        <div class="cm-dot" data-color="#c0392b" style="background:#c0392b;"></div>
-        <div class="cm-dot" data-color="#2471a3" style="background:#2471a3;"></div>
-        <div class="cm-dot" data-color="#1e8449" style="background:#1e8449;"></div>
-        <div class="cm-dot" data-color="#d4ac0d" style="background:#d4ac0d;"></div>
-        <div class="cm-dot" data-color="#884ea0" style="background:#884ea0;"></div>
-        <div class="cm-dot" data-color="#e67e22" style="background:#e67e22;"></div>
-        <div class="cm-dot" data-color="#aaa" style="background:#aaa;"></div>
+    <div class="idx-scroll" id="idx-scroll">
+      <h1 class="big-title" id="idx-title">RICETTE SALATE</h1>
+      <div class="title-rule"></div>
+      <div class="searchbar" id="searchbar">
+        <input type="search" id="q" placeholder="Cerca una ricetta" autocomplete="off"
+               autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+        <button class="clear" id="q-clear" aria-label="Cancella">✕</button>
+        <button class="go" id="q-go" aria-label="Vai alla ricetta trovata"></button>
       </div>
+      <div id="idx-list"></div>
+      <div style="height:24px"></div>
+    </div>
+    <div class="idx-bar">
+      <button class="btn-new" id="btn-new"><span>+</span> NUOVA RICETTA</button>
+      <!-- solo sulle Salate: è la vista "di atterraggio" da cui si apre -->
+      <button class="pill" id="btn-links">DA PROVARE</button>
+      <button class="link-switch" id="btn-switch">DOLCI ›</button>
     </div>
   </div>
-  <div class="bottom-nav">
-    <button class="nav-btn active"><i class="ti ti-notebook"></i>Agenda</button>
-    <button class="nav-btn" id="dv-nav-oggi" style="color:#1e8449;"><svg class="nav-home" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.707 2.293l9 9c.63 .63 .184 1.707 -.707 1.707h-1v6a3 3 0 0 1 -3 3h-1v-7a3 3 0 0 0 -2.824 -2.995l-.176 -.005h-2a3 3 0 0 0 -3 3v7h-1a3 3 0 0 1 -3 -3v-6h-1c-.89 0 -1.337 -1.077 -.707 -1.707l9 -9a1 1 0 0 1 1.414 0m.293 11.707a1 1 0 0 1 1 1v7h-4v-7a1 1 0 0 1 .883 -.993l.117 -.007z"/></svg>Oggi</button>
-    <button class="nav-btn" id="dv-nav-menu"><i class="ti ti-settings"></i>Menu</button>
-  </div>
-</div>
 
-<div class="overlay" id="menu-overlay">
-  <div class="panel">
-    <div class="panel-hdr"><h3>Menu</h3><button class="close-btn" id="menu-close" aria-label="Chiudi">&#x2715;</button></div>
-    <div class="section-title">Backup dati</div>
-    <div class="io-row">
-      <button class="io-btn export" id="btn-export"><i class="ti ti-download" aria-hidden="true"></i> Esporta</button>
-      <button class="io-btn import" id="btn-import"><i class="ti ti-upload" aria-hidden="true"></i> Importa</button>
+  <!-- ══ RICETTA ════════════════════════════════════════════ -->
+  <div class="screen" id="scr-recipe">
+    <div class="rec-top">
+      <button class="btn-back" id="btn-back"><b>←</b> Indice</button>
+      <div class="rec-actions" id="rec-actions"></div>
     </div>
-    <input type="file" id="file-input" accept=".json" style="display:none" />
-    <p class="io-note">Esporta salva un file JSON con tutti i tuoi dati. Importa su un nuovo device per ripristinare tutto.</p>
-  </div>
-</div>
-
-<div class="cal-wrap" id="cal-wrap">
-  <div class="cal-box" id="cal-box">
-    <div class="cal-nav">
-      <button id="cal-prev" aria-label="Mese precedente">&#8249;</button>
-      <span id="cal-label"></span>
-      <button id="cal-next" aria-label="Mese successivo">&#8250;</button>
+    <div class="rec-scroll" id="rec-scroll"></div>
+    <div class="pg-arrows" id="pg-arrows">
+      <button class="pg-arrow" id="pg-prev" aria-label="Ricetta precedente">‹</button>
+      <button class="pg-arrow" id="pg-next" aria-label="Ricetta successiva">›</button>
     </div>
-    <div class="cgrid" id="cgrid"></div>
-    <button class="cal-close-btn" id="cal-close">Chiudi</button>
   </div>
+
+  <!-- ══ LINK DA PROVARE ════════════════════════════════════ -->
+  <!-- Una lista piatta e condivisa di indirizzi, non ancora ricette: si
+       elimina la voce a mano quando la si trasforma in una ricetta vera,
+       non c'è nessun collegamento automatico. -->
+  <div class="screen" id="scr-links">
+    <div class="rec-top">
+      <button class="btn-back" id="btn-links-back"><b>←</b> Indice</button>
+    </div>
+    <div class="idx-scroll" id="links-scroll">
+      <h1 class="big-title">DA PROVARE</h1>
+      <div class="title-rule"></div>
+      <div class="lk-add">
+        <input type="url" id="link-url" placeholder="Incolla un link…" autocapitalize="off"
+               autocorrect="off" spellcheck="false" enterkeyhint="done" />
+        <button class="pill solid" id="link-add">+ Aggiungi</button>
+      </div>
+      <div id="links-list"></div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
 </div>
 
+<!-- Ricettario stampabile: riempito al volo e mostrato solo in stampa.
+     Sta fuori da .wrap perché in stampa .wrap viene nascosta. -->
+<div class="stampa" id="stampa" aria-hidden="true"></div>
+
+<script src="supabase.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
